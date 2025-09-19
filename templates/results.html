@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results - {{ symbol }}</title>
+</head>
+<body>
+    <h1>Stock Analysis for {{ symbol }}</h1>
+
+    <h2>Simple Moving Average (SMA)</h2>
+    {{ analysis.sma_chart | safe }}
+
+    <h2>Daily Returns</h2>
+    {{ analysis.returns_chart | safe }}
+
+    <h2>Cumulative Profit</h2>
+    {{ analysis.profit_chart | safe }}
+
+    <br>
+    <a href="/">&#8592; Back</a>
+</body>
+</html>
+

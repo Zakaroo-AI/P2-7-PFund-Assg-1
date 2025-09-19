@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Analysis Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+  <h1 class="mb-4">📊 Stock Analysis Dashboard</h1>
+
+  <!-- Input Form -->
+  <form class="row g-3 mb-4" id="analyzeForm">
+    <div class="col-md-4">
+      <label for="symbol" class="form-label">Stock Symbol</label>
+      <input type="text" class="form-control" id="symbol" name="symbol" placeholder="AAPL, TSLA, MSFT">
+    </div>
+    <div class="col-md-4">
+      <label for="period" class="form-label">Period</label>
+      <select class="form-select" id="period" name="period">
+        <option value="1mo">1 Month</option>
+        <option value="3mo">3 Months</option>
+        <option value="6mo" selected>6 Months</option>
+        <option value="1y">1 Year</option>
+        <option value="2y">2 Years</option>
+        <option value="5y">5 Years</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label for="csvFile" class="form-label">Or Upload CSV</label>
+      <input type="file" class="form-control" id="csvFile" name="csvFile" accept=".csv">
+    </div>
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary w-100">Analyze</button>
+    </div>
+  </form>
+
+  <!-- Results -->
+  <div id="results" style="display:none;">
+    <h2 id="resultsHeader"></h2>
+
+    <div class="mb-5"><h4>SMA Chart</h4><div id="smaChart"></div></div>
+    <div class="mb-5"><h4>Runs</h4><div id="runsChart"></div></div>
+    <div class="mb-5"><h4>Daily Returns</h4><div id="returnsChart"></div></div>
+    <div class="mb-5"><h4>Max Profit</h4><div id="profitChart"></div></div>
+  </div>
+</div>
+
+<script>
+document.getElementById("analyzeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("period", document.getElementById("period").value);
+  const csvFile = document.getElementById("csvFile").files[0];
+  if (csvFile) {
+    formData.append("csvFile", csvFile);
+  } else {
+    formData.append("symbol", document.getElementById("symbol").value.trim());
+  }
+
+  const res = await fetch("/analyze", { method: "POST", body: formData });
+  const data = await res.json();
+
+  if (data.error) {
+    alert("Error: " + data.error);
+    return;
+  }
+
+  document.getElementById("results").style.display = "block";
+  document.getElementById("resultsHeader").textContent = "Results";
+
+  Plotly.newPlot("smaChart", [
+    { x: data.sma.dates, y: data.sma.close, mode: "lines", name: "Close" },
+    { x: data.sma.dates, y: data.sma.sma, mode: "lines", name: "SMA" }
+  ]);
+
+  Plotly.newPlot("runsChart", [
+    { x: data.runs.dates, y: data.runs.runs, mode: "lines+markers", name: "Runs" }
+  ]);
+
+  Plotly.newPlot("returnsChart", [
+    { x: data.returns.dates, y: data.returns.returns, mode: "lines+markers", name: "Daily Returns" }
+  ]);
+
+  Plotly.newPlot("profitChart", [
+    { x: data.sma.dates, y: data.sma.close, mode: "lines", name: "Close" }
+  ], {
+    title: `Max Profit: $${data.profit.profit}`,
+  });
+});
+</script>
+
+</body>
+</html>
