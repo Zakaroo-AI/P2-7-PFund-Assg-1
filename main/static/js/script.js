@@ -316,4 +316,56 @@ $(document).ready(function() {
             compareSymbol2 = '';
         }
     });
+
+    // ============================
+    // Daily Returns Feature
+    // ============================
+    let drPeriod = "6mo";
+
+    // Handle period buttons
+    $(document).on("click", ".dr-period-btn", function () {
+        $(".dr-period-btn").removeClass("active");
+        $(this).addClass("active");
+        drPeriod = $(this).data("period");
+    });
+
+    // Handle button click to fetch daily returns
+    $("#dailyReturnBtn").on("click", function () {
+        let symbol = $("#dailyReturnStock").val().trim().toUpperCase();
+        if (!symbol) return;
+
+        $("#drLoadingSpinner").show();
+        $("#drChartError").hide();
+        $("#dailyReturnChart").hide();
+        $("#dailyReturnTableContainer").hide();
+
+        $.getJSON(`/daily_returns?symbol=${symbol}&period=${drPeriod}`, function (data) {
+            $("#drLoadingSpinner").hide();
+
+            if (data.error) {
+                $("#drChartError").text(data.error).show();
+                return;
+            }
+
+            // Show chart
+            $("#dailyReturnChart").attr("src", "data:image/png;base64," + data.chart).show();
+
+            // Fill table
+            let tbody = $("#dailyReturnTableBody");
+            tbody.empty();
+            data.table.forEach(row => {
+                tbody.append(`
+                    <tr>
+                        <td>${row.Date}</td>
+                        <td>${row["Adj Close"]}</td>
+                        <td>${row["Daily Return"]}%</td>
+                    </tr>
+                `);
+            });
+            $("#dailyReturnTableContainer").show();
+        }).fail(function () {
+            $("#drLoadingSpinner").hide();
+            $("#drChartError").text("Error fetching daily returns").show();
+        });
+    });
 });

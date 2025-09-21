@@ -7,6 +7,7 @@ import io
 import base64
 import json
 from datetime import datetime, timedelta
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -245,6 +246,7 @@ def compare_stocks():
     
     except Exception as e:
         return jsonify({'error': f'Error comparing stocks: {str(e)}'})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
