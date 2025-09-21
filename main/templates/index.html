@@ -146,16 +146,18 @@
                                     <img id="compareChart" class="img-fluid" style="display: none;">
                                 </div>
                             </div>
-                            
+
                             <!-- Daily Returns Tab -->
                             <div class="tab-pane fade" id="dailyreturns" role="tabpanel">
                                 <div class="search-container mb-4">
                                     <div class="input-group">
-                                        <input type="text" id="dailyReturnStock" class="form-control" placeholder="Enter stock symbol (e.g., AAPL)" autocomplete="off">
+                                        <input type="text" id="dailyReturnStock" class="form-control" placeholder="Search for a stock (e.g., AAPL, MSFT)" autocomplete="off">
                                         <button class="btn btn-primary" id="dailyReturnBtn">
                                             <i class="fas fa-chart-line"></i> Get Returns
                                         </button>
                                     </div>
+                                    <!-- Autocomplete results container -->
+                                    <div id="dailyReturnAutocompleteResults" class="autocomplete-results"></div>
                                 </div>
 
                                 <div class="chart-controls mb-3">

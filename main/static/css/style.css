@@ -1,3 +1,6 @@
+/* ============================
+   General Body & Card Styles
+   ============================ */
 body {
     background-color: #f8f9fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,39 +34,54 @@ body {
     border-bottom: 3px solid white;
 }
 
+/* ============================
+   Search & Autocomplete
+   ============================ */
 .search-container {
     position: relative;
 }
 
-.autocomplete-results {
+/* Common autocomplete dropdown styling for all inputs */
+.autocomplete-results,
+#dailyReturnAutocompleteResults,
+#autocompleteResults1,
+#autocompleteResults2 {
     position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid #ddd;
-    border-top: none;
-    border-radius: 0 0 5px 5px;
+    z-index: 1000;
+    width: 100%;
     max-height: 200px;
     overflow-y: auto;
-    z-index: 1000;
+    border: 1px solid #ccc;
+    border-top: none;
+    background-color: #fff;
     display: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
-.autocomplete-item {
-    padding: 10px;
+.autocomplete-results .autocomplete-item,
+#dailyReturnAutocompleteResults .autocomplete-item,
+#autocompleteResults1 .autocomplete-item,
+#autocompleteResults2 .autocomplete-item {
+    padding: 8px 12px;
     cursor: pointer;
-    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
 }
 
-.autocomplete-item:hover {
-    background-color: #f0f0f0;
+.autocomplete-results .autocomplete-item:hover,
+.autocomplete-results .autocomplete-item.active,
+#dailyReturnAutocompleteResults .autocomplete-item:hover,
+#dailyReturnAutocompleteResults .autocomplete-item.active,
+#autocompleteResults1 .autocomplete-item:hover,
+#autocompleteResults1 .autocomplete-item.active,
+#autocompleteResults2 .autocomplete-item:hover,
+#autocompleteResults2 .autocomplete-item.active {
+    background-color: #0d6efd;
+    color: white;
 }
 
-.autocomplete-item:last-child {
-    border-bottom: none;
-}
-
+/* ============================
+   Stock Info & Charts
+   ============================ */
 .stock-info {
     background-color: #f8f9fa;
     padding: 15px;
@@ -92,6 +110,9 @@ body {
     color: white !important;
 }
 
+/* ============================
+   Popular Stock Buttons
+   ============================ */
 .stock-btn {
     transition: all 0.2s;
 }
@@ -101,16 +122,27 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.period-btn.active, .compare-period-btn.active {
+/* ============================
+   Period Buttons
+   ============================ */
+.period-btn.active, 
+.compare-period-btn.active, 
+.dr-period-btn.active {
     background-color: #0d6efd;
     color: white;
 }
 
-#stockChart, #compareChart {
+/* ============================
+   Stock & Compare Charts
+   ============================ */
+#stockChart, #compareChart, #dailyReturnChart {
     max-width: 100%;
     height: auto;
 }
 
+/* ============================
+   Tab Panes
+   ============================ */
 .tab-pane {
     padding-top: 20px;
 }
