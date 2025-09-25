@@ -65,7 +65,10 @@ def analyze():
             "sma": sa.get_sma(window=5),
             "runs": sa.get_runs(),
             "returns": sa.get_returns(),
-            "profit": sa.get_max_profit()
+            "profit": sa.get_max_profit(),
+            "rsi": sa.get_rsi(),
+            "ema": sa.get_ema(),
+            "macd": sa.get_macd()
         }
         return jsonify(results)
 

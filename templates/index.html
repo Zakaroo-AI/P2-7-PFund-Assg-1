@@ -42,9 +42,12 @@
     <h2 id="resultsHeader"></h2>
 
     <div class="mb-5"><h4>SMA Chart</h4><div id="smaChart"></div></div>
+    <div class="mb-5"><h4>EMA Chart</h4><div id="emaChart"></div></div>
     <div class="mb-5"><h4>Runs</h4><div id="runsChart"></div></div>
     <div class="mb-5"><h4>Daily Returns</h4><div id="returnsChart"></div></div>
     <div class="mb-5"><h4>Max Profit</h4><div id="profitChart"></div></div>
+    <div class="mb-5"><h4>Relative Strength Index</h4><div id="rsiChart"></div></div>
+    <div class="mb-5"><h4>MACD Chart</h4><div id="macdChart"></div></div>
   </div>
 </div>
 
@@ -76,6 +79,11 @@ document.getElementById("analyzeForm").addEventListener("submit", async (e) => {
     { x: data.sma.dates, y: data.sma.sma, mode: "lines", name: "SMA" }
   ]);
 
+  Plotly.newPlot("emaChart", [
+    { x: data.ema.dates, y: data.ema.close, mode: "lines", name: "Close" },
+    { x: data.ema.dates, y: data.ema.ema, mode: "lines", name: "EMA" }
+  ]);
+
   Plotly.newPlot("runsChart", [
     { x: data.runs.dates, y: data.runs.runs, mode: "lines+markers", name: "Runs" }
   ]);
@@ -89,6 +97,16 @@ document.getElementById("analyzeForm").addEventListener("submit", async (e) => {
   ], {
     title: `Max Profit: $${data.profit.profit}`,
   });
+
+  Plotly.newPlot("rsiChart", [
+    { x: data.rsi.dates, y: data.rsi.rsi, mode: "lines", name: "Relative Strength Index" }
+  ]);
+
+  Plotly.newPlot("macdChart", [
+    { x: data.macd.dates, y: data.macd.macd, mode: "lines", name: "Macd Line" },
+    { x: data.macd.dates, y: data.macd.signal, mode: "lines", name: "Signal Line" },
+    { x: data.macd.dates, y: data.macd.histogram, mode: "lines", name: "Histogram" }
+  ]);
 });
 </script>
 
