@@ -1,0 +1,7 @@
+flask
+flask-wtf
+wtforms
+yfinance
+pandas
+numpy
+plotly
