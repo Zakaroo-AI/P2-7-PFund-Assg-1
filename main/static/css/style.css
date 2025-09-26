@@ -1,15 +1,10 @@
-/* ============================
-   General Body & Card Styles
-   ============================ */
 body {
     background-color: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Helvetica
 }
-
 .card {
     border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -19,69 +14,136 @@ body {
 }
 
 .card-header .nav-tabs {
-    border-bottom: none;
+    border-bottom: 15px solid #f7f7f7;
+    display: flex;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    justify-content: center;
 }
 
 .card-header .nav-link {
     color: rgba(35, 35, 35, 0.8);
     border: none;
+    margin-left: 10px;
     border-bottom: 3px solid transparent;
+    border-radius: 10px 10px 10px 10px !important;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .card-header .nav-link.active {
     color: white;
+    border: none;
     background-color: transparent;
-    border-bottom: 3px solid white;
+    border-radius: 10px 10px 10px 10px !important;
 }
 
-/* ============================
-   Search & Autocomplete
-   ============================ */
 .search-container {
     position: relative;
-}
-
-/* Common autocomplete dropdown styling for all inputs */
-.autocomplete-results,
-#dailyReturnAutocompleteResults,
-#autocompleteResults1,
-#autocompleteResults2 {
-    position: absolute;
-    z-index: 1000;
     width: 100%;
+    margin: 0 auto;
+}
+.search-input {
+    width: 100%;
+    padding: 18px 70px 18px 20px;
+    border: none;
+    border-radius: 50px !important;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+.search-input:focus {
+    outline: 1px solid black;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    transform: scale(1.005);
+}
+.comparesearch-input {
+    width: 100%;
+    padding: 8px 20px 8px 20px;
+    border: none;
+    border-radius: 50px !important;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+.comparesearch-input:focus {
+    outline: 1px solid black;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    transform: scale(1.005);
+}
+.btn-single {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 125px;
+    height: 50px;
+    border-radius: 25px 25px 25px 25px !important;
+    background: rgb(36, 36, 255);
+    border: none;
+    font-size: 20px;
+    color: white;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+}
+.btn-single:hover {
+    background: #3a3eb3;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-50%) scale(1.05);
+}
+.btn-compare {
+    position: relative;
+    left: 15rem;
+    bottom: 3rem;
+    width: 125px;
+    height: 50px;
+    border-radius: 25px 25px 25px 25px !important;
+    background: rgb(36,36,255);
+    color: white;
+    border: none;
+    font-size: 20px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+}
+.btn-compare:hover {
+    background: #3a3eb3;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+}
+.autocomplete-results {
+    position: relative;
+    top: 0.5rem;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 5px 5px 5px 5px;
     max-height: 200px;
     overflow-y: auto;
-    border: 1px solid #ccc;
-    border-top: none;
-    background-color: #fff;
+    z-index: 1000;
     display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
-.autocomplete-results .autocomplete-item,
-#dailyReturnAutocompleteResults .autocomplete-item,
-#autocompleteResults1 .autocomplete-item,
-#autocompleteResults2 .autocomplete-item {
-    padding: 8px 12px;
+.autocomplete-item {
+    padding: 10px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    border-bottom: 1px solid #eee;
 }
 
-.autocomplete-results .autocomplete-item:hover,
-.autocomplete-results .autocomplete-item.active,
-#dailyReturnAutocompleteResults .autocomplete-item:hover,
-#dailyReturnAutocompleteResults .autocomplete-item.active,
-#autocompleteResults1 .autocomplete-item:hover,
-#autocompleteResults1 .autocomplete-item.active,
-#autocompleteResults2 .autocomplete-item:hover,
-#autocompleteResults2 .autocomplete-item.active {
-    background-color: #0d6efd;
-    color: white;
+.autocomplete-item:hover {
+    background-color: #f0f0f0;
 }
 
-/* ============================
-   Stock Info & Charts
-   ============================ */
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
 .stock-info {
     background-color: #f8f9fa;
     padding: 15px;
@@ -110,9 +172,6 @@ body {
     color: white !important;
 }
 
-/* ============================
-   Popular Stock Buttons
-   ============================ */
 .stock-btn {
     transition: all 0.2s;
 }
@@ -122,27 +181,16 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ============================
-   Period Buttons
-   ============================ */
-.period-btn.active, 
-.compare-period-btn.active, 
-.dr-period-btn.active {
+.period-btn.active, .compare-period-btn.active {
     background-color: #0d6efd;
     color: white;
 }
 
-/* ============================
-   Stock & Compare Charts
-   ============================ */
-#stockChart, #compareChart, #dailyReturnChart {
+#stockChart, #compareChart {
     max-width: 100%;
     height: auto;
 }
 
-/* ============================
-   Tab Panes
-   ============================ */
 .tab-pane {
     padding-top: 20px;
 }

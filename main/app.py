@@ -7,7 +7,6 @@ import io
 import base64
 import json
 from datetime import datetime, timedelta
-from io import BytesIO
 
 app = Flask(__name__)
 
@@ -246,58 +245,6 @@ def compare_stocks():
     
     except Exception as e:
         return jsonify({'error': f'Error comparing stocks: {str(e)}'})
-    
-@app.route('/daily_returns', methods=['GET'])
-def daily_returns():
-    symbol = request.args.get('symbol')
-    period = request.args.get('period', '6mo')
-
-    try:
-        stock = yf.Ticker(symbol)
-        hist = stock.history(period=period)
-
-        if hist.empty:
-            return jsonify({"error": f"No data for {symbol}"}), 400
-
-        # Use 'Close' if 'Adj Close' is missing
-        if 'Adj Close' not in hist.columns:
-            hist['Adj Close'] = hist['Close']
-
-        hist['Daily Return'] = hist['Adj Close'].pct_change()
-        hist = hist.dropna()
-
-        # Convert index to naive datetime (drop timezone)
-        hist.index = hist.index.tz_localize(None)
-
-        # Chart
-        plt.switch_backend('Agg')  # Prevent GUI warnings
-        plt.figure(figsize=(10, 5))
-        plt.plot(hist.index, hist['Daily Return'], label="Daily Return")
-        plt.title(f"Daily Returns for {symbol}")
-        plt.xlabel("Date")
-        plt.ylabel("Return")
-        plt.legend()
-
-        buf = BytesIO()
-        plt.savefig(buf, format="png")
-        buf.seek(0)
-        chart_data = base64.b64encode(buf.getvalue()).decode()
-        plt.close()
-
-        # Table data
-        rows = [
-            {
-                "Date": idx.strftime("%Y-%m-%d"),
-                "Adj Close": round(row["Adj Close"], 2),
-                "Daily Return": round(row["Daily Return"] * 100, 2)
-            }
-            for idx, row in hist.iterrows()
-        ]
-
-        return jsonify({"chart": chart_data, "table": rows})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
