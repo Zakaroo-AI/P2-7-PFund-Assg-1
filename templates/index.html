@@ -3,10 +3,16 @@
 {% block content %}
 <form method="POST" enctype="multipart/form-data">
   <label for="ticker">Enter Stock Ticker:</label>
-  <input type="text" name="ticker" id="ticker" placeholder="AAPL">
+  <input type="text" name="ticker1" id="ticker1" placeholder="AAPL">
 
-  <p>Or upload CSV:</p>
-  <input type="file" name="file" accept=".csv">
+  <label for="ticker2">Enter Ticker 2 (optional):</label>
+  <input type="text" name="ticker2" id="ticker2" placeholder="MSFT">
+
+  <p>Upload CSV:</p>
+  <input type="file" name="file1" accept=".csv">
+
+  <p>Upload second CSV (optional)</p>
+  <input type="file" name="file1" accept=".csv">
 
   <p>Select Indicators:</p>
   <input type="checkbox" name="indicator" value="sma"> SMA

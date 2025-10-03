@@ -1,3 +1,8 @@
+import pandas as pd
+
+
 def calculate_sma(df, window=20):
-    df[f"SMA_{window}"] = df['Close'].rolling(window=window).mean()
+    df = df.copy()
+    col = f'SMA_{window}'
+    df[col] = df['Close'].rolling(window=window, min_periods=1).mean()
     return df
