@@ -1,159 +1,29 @@
-/* ============================
-   General Body & Card Styles
-   ============================ */
 body {
-    background-color: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f9f9f9;
 }
-
-.card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+header {
+  background: #222;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
 }
-
-.card-header {
-    background-color: #0d6efd;
-    color: rgb(25, 25, 25);
-    border-radius: 10px 10px 0 0 !important;
-}
-
-.card-header .nav-tabs {
-    border-bottom: none;
-}
-
-.card-header .nav-link {
-    color: rgba(35, 35, 35, 0.8);
-    border: none;
-    border-bottom: 3px solid transparent;
-}
-
-.card-header .nav-link.active {
-    color: white;
-    background-color: transparent;
-    border-bottom: 3px solid white;
-}
-
-/* ============================
-   Search & Autocomplete
-   ============================ */
-.search-container {
-    position: relative;
-}
-
-/* Common autocomplete dropdown styling for all inputs */
-.autocomplete-results,
-#dailyReturnAutocompleteResults,
-#autocompleteResults1,
-#autocompleteResults2 {
-    position: absolute;
-    z-index: 1000;
-    width: 100%;
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    border-top: none;
-    background-color: #fff;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-.autocomplete-results .autocomplete-item,
-#dailyReturnAutocompleteResults .autocomplete-item,
-#autocompleteResults1 .autocomplete-item,
-#autocompleteResults2 .autocomplete-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.autocomplete-results .autocomplete-item:hover,
-.autocomplete-results .autocomplete-item.active,
-#dailyReturnAutocompleteResults .autocomplete-item:hover,
-#dailyReturnAutocompleteResults .autocomplete-item.active,
-#autocompleteResults1 .autocomplete-item:hover,
-#autocompleteResults1 .autocomplete-item.active,
-#autocompleteResults2 .autocomplete-item:hover,
-#autocompleteResults2 .autocomplete-item.active {
-    background-color: #0d6efd;
-    color: white;
-}
-
-/* ============================
-   Stock Info & Charts
-   ============================ */
-.stock-info {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 5px;
-    border-left: 4px solid #0d6efd;
-}
-
-.chart-container {
-    min-height: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #fff;
-    border-radius: 5px;
-    padding: 20px;
-    border: 1px solid #eee;
-}
-
-.positive-change {
-    background-color: #198754 !important;
-    color: white !important;
-}
-
-.negative-change {
-    background-color: #dc3545 !important;
-    color: white !important;
-}
-
-/* ============================
-   Popular Stock Buttons
-   ============================ */
-.stock-btn {
-    transition: all 0.2s;
-}
-
-.stock-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* ============================
-   Period Buttons
-   ============================ */
-.period-btn.active, 
-.compare-period-btn.active, 
-.dr-period-btn.active {
-    background-color: #0d6efd;
-    color: white;
-}
-
-/* ============================
-   Stock & Compare Charts
-   ============================ */
-#stockChart, #compareChart, #dailyReturnChart {
-    max-width: 100%;
-    height: auto;
-}
-
-/* ============================
-   Tab Panes
-   ============================ */
-.tab-pane {
-    padding-top: 20px;
-}
-
-.stock-card {
-  cursor: pointer;
-  border: 1px solid #ddd;
+form {
+  background: white;
+  padding: 20px;
   border-radius: 8px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
-.stock-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+button:hover {
+  background: #0056b3;
 }

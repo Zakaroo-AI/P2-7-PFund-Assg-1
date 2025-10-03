@@ -1,0 +1,5 @@
+uploads/
+static/images/plot.png
+__pycache__/
+*.pyc
+.env

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+  <h2>Analysis Results</h2>
+  <img src="{{ url_for('static', filename='images/plot.png') }}" alt="Stock Plot">
+  <a href="{{ url_for('index') }}">Go Back</a>
+{% endblock %}
