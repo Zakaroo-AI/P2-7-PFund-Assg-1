@@ -63,7 +63,15 @@
                                         <button type="button" class="btn btn-outline-primary period-btn" data-period="1y">1Y</button>
                                         <button type="button" class="btn btn-outline-primary period-btn" data-period="2y">2Y</button>
                                     </div>
+                                    <div class="btn-group ms-2" role="group">
+                                        <input type="file" id="csvUpload" accept=".csv" style="display: none;">
+                                        <button type="button" class="btn btn-outline-success" id="csvUploadBtn">
+                                            <i class="fas fa-file-csv"></i> Upload CSV
+                                        </button>
+                                    </div>
                                 </div>
+
+                                
 
                                 <div class="chart-container mb-4">
                                     <div id="loadingSpinner" class="text-center" style="display: none;">

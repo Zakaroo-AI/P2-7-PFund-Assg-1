@@ -55,6 +55,80 @@ def _history_df(symbol: str, period: str) -> pd.DataFrame:
             pass
     return df
 
+@app.route('/process_csv', methods=['POST'])
+def process_csv():
+    try:
+        data = request.get_json()
+        csv_data = data.get('csv_data', '')
+        
+        if not csv_data:
+            return jsonify({'error': 'No CSV data provided'})
+        
+        # Read CSV data into DataFrame
+        from io import StringIO
+        df = pd.read_csv(StringIO(csv_data))
+        
+        # Basic validation - check for required columns
+        required_columns = ['Date', 'Close']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            return jsonify({'error': f'Missing required columns: {", ".join(missing_columns)}'})
+        
+        # Convert Date column to datetime and set as index
+        df['Date'] = pd.to_datetime(df['Date'])
+        df = df.set_index('Date')
+        df = df.sort_index()
+        
+        # Ensure numeric columns
+        df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+        df = df.dropna(subset=['Close'])
+        
+        if df.empty:
+            return jsonify({'error': 'No valid data after processing CSV'})
+        
+        # Calculate moving averages
+        df["SMA20"] = df["Close"].rolling(20).mean()
+        df["SMA50"] = df["Close"].rolling(50).mean()
+        
+        # Create the chart figure
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=df.index, y=df["Close"], mode="lines", name="Close Price"
+        ))
+        fig.add_trace(go.Scatter(
+            x=df.index, y=df["SMA20"], mode="lines", name="SMA 20"
+        ))
+        fig.add_trace(go.Scatter(
+            x=df.index, y=df["SMA50"], mode="lines", name="SMA 50"
+        ))
+        
+        fig.update_layout(
+            margin=dict(l=30, r=10, t=40, b=40),
+            title="Custom CSV Data - Stock Price with Moving Averages",
+            xaxis_title="Date",
+            yaxis_title="Price ($)",
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        # Calculate current price and change
+        current_price = float(df["Close"].iloc[-1])
+        prev_close = float(df["Close"].iloc[-2]) if len(df) > 1 else current_price
+        change = current_price - prev_close
+        change_percent = (change / prev_close) * 100 if prev_close != 0 else 0.0
+        
+        return jsonify({
+            'symbol': 'CSV',
+            'companyName': 'Custom CSV Data',
+            'currentPrice': round(current_price, 2),
+            'change': round(change, 2),
+            'changePercent': round(change_percent, 2),
+            'fig': json.loads(fig.to_json()),
+            'error': None
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error processing CSV: {str(e)}'})
 
 def _line_with_sma_figure(df: pd.DataFrame, symbol: str) -> go.Figure:
     """Line chart with Close + SMA20 + SMA50."""

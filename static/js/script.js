@@ -38,6 +38,92 @@ $(document).ready(function () {
         }
     });
 
+    // ---------- CSV Upload Functionality ----------
+    $('#csvUploadBtn').on('click', function() {
+        $('#csvUpload').click();
+    });
+
+    $('#csvUpload').on('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            handleCSVUpload(file);
+        }
+    });
+
+    function handleCSVUpload(file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            try {
+                const csvData = e.target.result;
+                processCSVData(csvData);
+            } catch (error) {
+                showError('#chartError', 'Error reading CSV file: ' + error.message);
+            }
+        };
+        
+        reader.onerror = function() {
+            showError('#chartError', 'Error reading file');
+        };
+        
+        reader.readAsText(file);
+    }
+
+    function processCSVData(csvData) {
+        showSpinner('#loadingSpinner', true);
+        showError('#chartError', '');
+        $('#stockInfo').hide();
+        
+        $.ajax({
+            url: '/process_csv',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                csv_data: csvData
+            }),
+            success: function(data) {
+                showSpinner('#loadingSpinner', false);
+                
+                if (data.error) {
+                    showError('#chartError', data.error);
+                    return;
+                }
+                
+                updateUIWithCSVData(data);
+            },
+            error: function(xhr, status, error) {
+                showSpinner('#loadingSpinner', false);
+                showError('#chartError', 'Error processing CSV: ' + error);
+            }
+        });
+    }
+
+    function updateUIWithCSVData(data) {
+        // Update stock info
+        $('#companyName').text(data.companyName || 'Custom CSV Data');
+        $('#stockSymbol').text(data.symbol || 'CSV');
+        $('#stockPrice').text('$' + data.currentPrice.toFixed(2));
+
+        const changeElem = $('#stockChange');
+        changeElem.text((data.change >= 0 ? '+' : '') + data.change.toFixed(2) + 
+            ' (' + (data.changePercent >= 0 ? '+' : '') + data.changePercent.toFixed(2) + '%)');
+        changeElem.removeClass('positive-change negative-change');
+        changeElem.addClass(data.change >= 0 ? 'positive-change badge' : 'negative-change badge');
+
+        $('#stockInfo').show();
+        
+        // Update chart with CSV data
+        if (data.fig) {
+            plotInto('stockChart', data.fig);
+        }
+        
+        // Clear the file input
+        $('#csvUpload').val('');
+        
+        // Update current symbol to reflect CSV data
+        currentSymbol = data.symbol || 'CSV';
+    }
+
     // ---------- Single Stock ----------
     function loadStockData(symbol, period) {
         showSpinner('#loadingSpinner', true);
