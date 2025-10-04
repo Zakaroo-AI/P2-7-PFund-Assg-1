@@ -15,19 +15,19 @@ INDICATORS = {
     },
     "ema": {
         "func": calculate_ema,
-        "default_params": {"window": 20},
-        "columns": lambda p: [f"EMA_{p.get('window', 20)}"],
+        "default_params": {"interval": 20},
+        "columns": lambda p: [f"EMA_{p.get('interval', 20)}"],
         "plot_kind": "overlay",
     },
     "rsi": {
         "func": calculate_rsi,
-        "default_params": {"period": 14},
-        "columns": lambda p: [f"RSI_{p.get('period', 14)}"],
+        "default_params": {"interval": 14},
+        "columns": lambda p: [f"RSI_{p.get('interval', 14)}"],
         "plot_kind": "separate_rsi",  # draw in its own subplot with range 0-100
     },
     "macd": {
         "func": calculate_macd,
-        "default_params": {"span_short": 12, "span_long": 26, "span_signal": 9},
+        "default_params": {"fast_period": 12, "slow_period": 26, "signal_period": 9},
         "columns": lambda p: ["MACD", "MACD_signal", "MACD_hist"],
         "plot_kind": "separate_macd",  # macd histogram + signal in second subplot
     },

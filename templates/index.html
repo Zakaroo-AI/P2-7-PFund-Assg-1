@@ -25,11 +25,11 @@
 
   <div class="tabs" style="margin-top: 12px;">
     <!-- each button is a submit that carries an 'indicator' value -->
+    <button type="submit" name="indicator" value="" class="tab">Close Prices</button>
     <button type="submit" name="indicator" value="sma" class="tab">SMA</button>
     <button type="submit" name="indicator" value="ema" class="tab">EMA</button>
     <button type="submit" name="indicator" value="rsi" class="tab">RSI</button>
     <button type="submit" name="indicator" value="macd" class="tab">MACD</button>
-    <button type="submit" name="indicator" value="" class="tab">Close Price Only</button>
   </div>
 </form>
 
@@ -42,16 +42,14 @@
 {% if plot_div %}
   <div id="plot-area" style="margin-top:20px;">
     <h2>Analysis Results {% if indicator %} - {{ indicator|upper }}{% endif %}</h2>
-    <div id="plot-container">
-      {{ plot_div | safe }}
-    </div>
-
-    <h3>Data Sources</h3>
     <ul>
       {% for label in labels %}
         <li>{{ label }}</li>
       {% endfor %}
     </ul>
+    <div id="plot-container">
+      {{ plot_div | safe }}
+    </div>    
   </div>
 {% endif %}
 {% endblock %}
