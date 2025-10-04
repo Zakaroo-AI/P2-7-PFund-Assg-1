@@ -2,27 +2,27 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 <form method="POST" enctype="multipart/form-data">
-  <label for="ticker">Enter Stock Ticker:</label>
+  <label for="ticker1">Enter Stock Ticker 1:</label>
   <input type="text" name="ticker1" id="ticker1" placeholder="AAPL">
 
   <label for="ticker2">Enter Ticker 2 (optional):</label>
   <input type="text" name="ticker2" id="ticker2" placeholder="MSFT">
 
-  <p>Upload CSV:</p>
+  <p>Upload CSV (optional):</p>
   <input type="file" name="file1" accept=".csv">
 
   <p>Upload second CSV (optional)</p>
   <input type="file" name="file2" accept=".csv">
 
-  <div class="tabs">
-    <button class="tab" data-indicator="sma">SMA</button>
-    <button class="tab" data-indicator="ema">EMA</button>
-    <button class="tab" data-indicator="rsi">RSI</button>
-    <button class="tab" data-indicator="macd">MACD</button>
+  <div class="tabs" style="margin-top: 12px;">
+    <!-- each button is a submit that carries an 'indicator' value -->
+    <button type="submit" name="indicator" value="sma" class="tab">SMA</button>
+    <button type="submit" name="indicator" value="ema" class="tab">EMA</button>
+    <button type="submit" name="indicator" value="rsi" class="tab">RSI</button>
+    <button type="submit" name="indicator" value="macd" class="tab">MACD</button>
   </div>
-
-  <button type="submit">Analyze</button>
 </form>
+
 {% if error %}
   <p style="color:red">{{ error }}</p>
 {% endif %}
