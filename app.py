@@ -39,7 +39,7 @@ def index():
                 file_obj.save(filepath)
                 ok = validate_csv_columns(filepath)
                 if not ok:
-                    print('not ok')
+                    print('Data Columns did not pass validation checks')
                     return None
                 df = get_stock_data(filepath=filepath)
                 label = file_obj.filename
@@ -96,8 +96,6 @@ def index():
 
         plot_path = os.path.join(IMG_FOLDER, 'plot.png')
         saved = plot_close_prices(dfs, labels, indicators=indicator_columns, save_path=plot_path)
-
-
         return render_template('results.html', plot_url=os.path.join('images', os.path.basename(saved)))
 
 

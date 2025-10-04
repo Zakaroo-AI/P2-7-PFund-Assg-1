@@ -12,13 +12,14 @@
   <input type="file" name="file1" accept=".csv">
 
   <p>Upload second CSV (optional)</p>
-  <input type="file" name="file1" accept=".csv">
+  <input type="file" name="file2" accept=".csv">
 
-  <p>Select Indicators:</p>
-  <input type="checkbox" name="indicator" value="sma"> SMA
-  <input type="checkbox" name="indicator" value="ema"> EMA
-  <input type="checkbox" name="indicator" value="rsi"> RSI
-  <input type="checkbox" name="indicator" value="macd"> MACD
+  <div class="tabs">
+    <button class="tab" data-indicator="sma">SMA</button>
+    <button class="tab" data-indicator="ema">EMA</button>
+    <button class="tab" data-indicator="rsi">RSI</button>
+    <button class="tab" data-indicator="macd">MACD</button>
+  </div>
 
   <button type="submit">Analyze</button>
 </form>

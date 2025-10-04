@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 
-def plot_close_prices(dfs, labels, indicators=None, save_path=None, figsize=(12,6)):
+def plot_close_prices(dfs, labels, indicators=None, save_path=None):
     """
     Plot close prices for a list of DataFrames. Optionally overlay indicator columns (list of column names).
 
@@ -16,7 +16,7 @@ def plot_close_prices(dfs, labels, indicators=None, save_path=None, figsize=(12,
     - indicators: list of column names (strings) to try to plot if present
     - save_path: if provided, saves the figure to that path and returns the path
     """
-    plt.figure(figsize=figsize)
+    plt.figure(figsize=(12,6))
 
 
     for df, label in zip(dfs, labels):
