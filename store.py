@@ -49,7 +49,7 @@ def plot_close_prices(
             cols=1,
             shared_xaxes=True,
             vertical_spacing=0.08,
-            row_heights=[0.4, 0.6],
+            row_heights=[0.7, 0.3],
             specs=[[{"secondary_y": False}], [{"secondary_y": False}]],
         )
     else:
@@ -155,10 +155,12 @@ def plot_close_prices(
     fig.update_layout(
         height=700,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        hovermode="x unified",
+        hovermode="x unified",  # This is the key setting for shared hover
         margin=dict(l=50, r=20, t=50, b=50),
         template="plotly_white",
     )
+    
+    # Configure x-axes for cross-subplot interaction
     fig.update_xaxes(
         rangeslider_visible=False,
         showspikes=True,
@@ -168,6 +170,7 @@ def plot_close_prices(
         spikedash='solid',
         spikecolor='gray'
     )
+    
     # Also update y-axes to show spikes
     fig.update_yaxes(showspikes=True, spikemode='across', spikethickness=1)
 

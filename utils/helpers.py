@@ -37,20 +37,12 @@ def filter_dataframe(df: pd.DataFrame, source: str, option: str) -> pd.DataFrame
         # default to 1 year if unknown
         option = '1Y'
 
-    if source == 'ticker':
-        months = TICKER_MONTHS_MAP[option]
-        try:
-            cutoff = df['Date'].max() - pd.DateOffset(months=months)
-            filtered = df[df['Date'] >= cutoff].copy()
-        except Exception:
-            # fallback: return the last N rows using approximate trading days
-            rows = UPLOAD_ROWS_MAP.get(option, 252)
-            filtered = df.tail(rows).copy()
-        return filtered.reset_index(drop=True)
-
-    elif source == 'file':
+    months = TICKER_MONTHS_MAP[option]
+    try:
+        cutoff = df['Date'].max() - pd.DateOffset(months=months)
+        filtered = df[df['Date'] >= cutoff].copy()
+    except Exception:
+        # fallback: return the last N rows using approximate trading days
         rows = UPLOAD_ROWS_MAP.get(option, 252)
-        return df.head(rows).copy().reset_index(drop=True)
-
-    else:
-        raise ValueError('Unknown source for filtering: ' + str(source))
+        filtered = df.tail(rows).copy()
+    return filtered.reset_index(drop=True)

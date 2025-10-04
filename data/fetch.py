@@ -14,7 +14,7 @@ def get_stock_data(ticker=None, filepath=None):
         df = pd.read_csv(filepath)
         if "Date" not in df.columns or "Close" not in df.columns:
             raise ValueError("CSV must contain 'Date' and 'Close' columns.")
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce', utc=True)
         df.sort_values("Date", inplace=True)
         label = os.path.splitext(os.path.basename(filepath))[0]
         return df, label

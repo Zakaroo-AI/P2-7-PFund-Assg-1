@@ -1,6 +1,6 @@
 # app.py (updated)
-from flask import Flask, render_template, request
-import os
+from flask import Flask, render_template, request, session
+import os, json
 from werkzeug.utils import secure_filename
 import pandas as pd
 
@@ -16,6 +16,12 @@ BASE_DIR = os.path.dirname(__file__)
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Global cache to store uploaded data between requests
+uploaded_cache = {
+    "file1": None,
+    "file2": None,
+    "labels": {"file1": None, "file2": None}
+}
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -39,8 +45,10 @@ def index():
                 filename = secure_filename(uploaded.filename)
                 if not allowed_file(filename):
                     return render_template('index.html', indicators=indicators, error=f'File not allowed: {filename}')
+                
                 save_path = os.path.join(UPLOAD_FOLDER, filename)
                 uploaded.save(save_path)
+
                 # basic validation
                 try:
                     validate_csv_columns(save_path, required_cols=['Date', 'Close'])
@@ -49,12 +57,24 @@ def index():
 
                 df, label = get_stock_data(filepath=save_path)
                 # ensure Date parsed and sorted
-                df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+                df['Date'] = pd.to_datetime(df['Date'], errors='coerce', utc=True)
                 df = df.sort_values('Date').reset_index(drop=True)
-                # apply filtering for uploaded files (first N rows mapping)
-                df_filtered = filter_dataframe(df, source='file', option=time_range)
-                dfs.append(df_filtered)
-                labels.append(label)
+
+                # Update cache with uploaded data
+                uploaded_cache[file_field] = df
+                uploaded_cache["labels"][file_field] = label
+
+            # retrieve pre-cached data if no data is uploaded
+            elif uploaded_cache[file_field] is not None:
+                df = uploaded_cache[file_field]
+                label = uploaded_cache["labels"][file_field]
+
+            else:
+                continue
+
+            df_filtered = filter_dataframe(df, source='file', option=time_range)
+            dfs.append(df_filtered)
+            labels.append(label)
 
         # handle tickers
         for ticker in [ticker1, ticker2]:
@@ -64,7 +84,7 @@ def index():
                 except Exception as e:
                     return render_template('index.html', indicators=indicators, error=f'Error fetching {ticker}: {e}')
                 # ensure Date parsed and sorted
-                df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+                df['Date'] = pd.to_datetime(df['Date'], errors='coerce', utc=True)
                 df = df.sort_values('Date').reset_index(drop=True)
                 # apply filtering for ticker (latest N months)
                 df_filtered = filter_dataframe(df, source='ticker', option=time_range)
@@ -103,6 +123,12 @@ def index():
     # GET
     return render_template('index.html', indicators=get_indicator_keys())
 
+@app.route('/clear_cache')
+def clear_cache():
+    uploaded_cache["file1"] = None
+    uploaded_cache["file2"] = None
+    uploaded_cache["labels"] = {"file1": None, "file2": None}
+    return "Cache cleared."
 
 if __name__ == '__main__':
     app.run(debug=True)
