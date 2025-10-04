@@ -3,10 +3,10 @@
 {% block content %}
 <form method="POST" enctype="multipart/form-data">
   <label for="ticker1">Enter Stock Ticker 1:</label>
-  <input type="text" name="ticker1" id="ticker1" placeholder="AAPL">
+  <input type="text" name="ticker1" id="ticker1" placeholder="AAPL" value="{{ request.form.ticker1 or '' }}">
 
   <label for="ticker2">Enter Ticker 2 (optional):</label>
-  <input type="text" name="ticker2" id="ticker2" placeholder="MSFT">
+  <input type="text" name="ticker2" id="ticker2" placeholder="MSFT" value="{{ request.form.ticker2 or '' }}">
 
   <p>Upload CSV (optional):</p>
   <input type="file" name="file1" accept=".csv">
@@ -14,16 +14,45 @@
   <p>Upload second CSV (optional)</p>
   <input type="file" name="file2" accept=".csv">
 
+  <p>Select timeframe:</p>
+  <select name="time_range">
+    <option value="1M" {% if time_range=='1M' %}selected{% endif %}>1 month</option>
+    <option value="3M" {% if time_range=='3M' %}selected{% endif %}>3 months</option>
+    <option value="6M" {% if time_range=='6M' %}selected{% endif %}>6 months</option>
+    <option value="1Y" {% if time_range=='1Y' or not time_range %}selected{% endif %}>1 year</option>
+    <option value="2Y" {% if time_range=='2Y' %}selected{% endif %}>2 years</option>
+  </select>
+
   <div class="tabs" style="margin-top: 12px;">
     <!-- each button is a submit that carries an 'indicator' value -->
     <button type="submit" name="indicator" value="sma" class="tab">SMA</button>
     <button type="submit" name="indicator" value="ema" class="tab">EMA</button>
     <button type="submit" name="indicator" value="rsi" class="tab">RSI</button>
     <button type="submit" name="indicator" value="macd" class="tab">MACD</button>
+    <button type="submit" name="indicator" value="" class="tab">Close Price Only</button>
   </div>
 </form>
+
 
 {% if error %}
   <p style="color:red">{{ error }}</p>
 {% endif %}
+
+{# If a plot has been generated, render it directly below the options (no separate page) #}
+{% if plot_div %}
+  <div id="plot-area" style="margin-top:20px;">
+    <h2>Analysis Results {% if indicator %} - {{ indicator|upper }}{% endif %}</h2>
+    <div id="plot-container">
+      {{ plot_div | safe }}
+    </div>
+
+    <h3>Data Sources</h3>
+    <ul>
+      {% for label in labels %}
+        <li>{{ label }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
 {% endblock %}
+
