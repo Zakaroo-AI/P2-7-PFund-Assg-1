@@ -20,7 +20,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 uploaded_cache = {
     "file1": None,
     "file2": None,
-    "labels": {"file1": None, "file2": None}
+    "labels": {"file1": None, "file2": None},
+    "filenames": {"file1": None, "file2": None}
 }
 
 @app.route('/', methods=['GET', 'POST'])
