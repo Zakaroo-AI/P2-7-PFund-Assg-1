@@ -55,8 +55,8 @@ def apply_indicator(df, key: str, params: dict | None = None):
         raise ValueError(f"Unknown indicator: {key}")
 
     params = params or {}
-    merged_params = {**spec["default_params"], **params}
-    expected_cols = spec["columns"](merged_params)
+    merged_params = {**spec["default_params"], **params}    # this overrides default params with new params
+    expected_cols = spec["columns"](merged_params) 
 
     # if all expected columns already exist, skip
     if all(col in df.columns for col in expected_cols):

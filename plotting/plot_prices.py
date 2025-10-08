@@ -27,7 +27,7 @@ def plot_close_prices(
 
     - dfs: list of DataFrames (each must contain 'Date' and 'Close')
     - labels: list of labels for legends
-    - indicator_key: 'sma', 'ema', 'rsi', 'macd' or None
+    - indicator_key: 'sma', 'ema', 'rsi', 'macd', 'close' or None (treat close and None the same)
     - indicator_params: indicator-specific params (window, period, etc.)
     """
     indicator_key = indicator_key or None

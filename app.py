@@ -1,6 +1,6 @@
 # app.py (updated)
 from flask import Flask, render_template, request, session
-import os, json
+import os, json, copy
 from werkzeug.utils import secure_filename
 import pandas as pd
 
@@ -20,20 +20,45 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 uploaded_cache = {
     "file1": None,
     "file2": None,
-    "labels": {"file1": None, "file2": None},
+    "labels": {"file1": None, "file2": None},   # ticker labels
     "filenames": {"file1": None, "file2": None}
 }
 
+# viewing: current indicator, retrievable across requests
+indicator_params = {
+    'viewing': None
+}
+# auto populating uploaded_cache's params dictionary with default parameters for each indicator
+try:
+    for indicator in get_indicator_keys():
+        indicator_params[indicator] = copy.deepcopy(get_indicator_spec(indicator)["default_params"])
+except:
+    indicator_params = {}
+
+#print('zkdebug', indicator_params)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    indicators = get_indicator_keys()
+    # indicators = get_indicator_keys()
 
     if request.method == 'POST':
+        print("REQUEST METHOD:", request.method)
+        print("FORM keys:", list(request.form.keys()))
+        print("RAW form:", request.form)   # shows MultiDict
+
+        # continue with your normal logic...
+
         # Read form inputs
         ticker1 = request.form.get('ticker1', '').strip() or None
         ticker2 = request.form.get('ticker2', '').strip() or None
-        indicator_key = request.form.get('indicator')  # 'sma', 'ema', ...
         time_range = request.form.get('time_range', '1Y')  # '1M','3M','6M','1Y','2Y'
+        
+        indicator_key = request.form.get('indicator')# 'sma', 'ema', ...
+
+        if indicator_key:
+            indicator_params['viewing'] = indicator_key
+        else:
+            indicator_key = indicator_params['viewing']
 
         # collect datasets (list of DataFrames) and labels
         dfs = []
@@ -45,7 +70,7 @@ def index():
             if uploaded and uploaded.filename:
                 filename = secure_filename(uploaded.filename)
                 if not allowed_file(filename):
-                    return render_template('index.html', indicators=indicators, error=f'File not allowed: {filename}')
+                    return render_template('index.html', shown_indicator=indicator_key, error=f'File not allowed: {filename}')
                 
                 save_path = os.path.join(UPLOAD_FOLDER, filename)
                 uploaded.save(save_path)
@@ -54,7 +79,7 @@ def index():
                 try:
                     validate_csv_columns(save_path, required_cols=['Date', 'Close'])
                 except Exception as e:
-                    return render_template('index.html', indicators=indicators, error=str(e))
+                    return render_template('index.html', shown_indicator=indicator_key, error=str(e))
 
                 df, label = get_stock_data(filepath=save_path)
                 # ensure Date parsed and sorted
@@ -83,7 +108,7 @@ def index():
                 try:
                     df, label = get_stock_data(ticker=ticker)
                 except Exception as e:
-                    return render_template('index.html', indicators=indicators, error=f'Error fetching {ticker}: {e}')
+                    return render_template('index.html', shown_indicator=indicator_key, error=f'Error fetching {ticker}: {e}')
                 # ensure Date parsed and sorted
                 df['Date'] = pd.to_datetime(df['Date'], errors='coerce', utc=True)
                 df = df.sort_values('Date').reset_index(drop=True)
@@ -93,36 +118,47 @@ def index():
                 labels.append(label)
 
         if not dfs:
-            return render_template('index.html', indicators=indicators, error='No data provided. Provide a ticker or upload a CSV.')
+            return render_template('index.html', shown_indicator=indicator_key, error='No data provided. Provide a ticker or upload a CSV.')
+        
+        # Update parameters with user's inputs
+        for key in request.form.keys():
+            # all parameters in request.form start with indicator_
+            if key.startswith(indicator_key):
+                # extract only the parameter name (some parameters have _ in their name)
+                param = key.split('_', 1)[1]
+                # all parameters have to be integer
+                indicator_params[indicator_key][param] = int(request.form.get(key))
 
-        # Apply indicator if provided
-        try:
-            indicator_params = get_indicator_spec(indicator_key)['default_params'] if indicator_key else {}
-        except Exception:
-            indicator_params = {}
+        print('zkdebug3', indicator_params, indicator_key)
 
         applied = []
         for df in dfs:
             if indicator_key:
                 try:
-                    df_with_ind = apply_indicator(df, indicator_key, params=indicator_params)
+                    df_with_ind = apply_indicator(df, indicator_key, params=indicator_params[indicator_key])
                 except Exception as e:
-                    return render_template('index.html', indicators=indicators, error=f'Indicator error: {e}')
+                    return render_template('index.html', shown_indicator=indicator_key, error=f'Indicator error: {e}')
             else:
                 df_with_ind = df.copy()
             applied.append(df_with_ind)
 
         # Build plot
         try:
-            plot_div = plot_close_prices(applied, labels, indicator_key=indicator_key, indicator_params=indicator_params)
+            plot_div = plot_close_prices(applied, labels, indicator_key=indicator_key, indicator_params=indicator_params[indicator_key])
         except Exception as e:
-            return render_template('index.html', indicators=indicators, error=f'Plotting error: {e}')
+            return render_template('index.html', shown_indicator=indicator_key, error=f'Plotting error: {e}')
 
         # Render the SAME index.html but include the plot fragment and labels.
-        return render_template('index.html', indicators=indicators, plot_div=plot_div, labels=labels, time_range=time_range)
+        return render_template('index.html',
+                               shown_indicator=indicator_key,
+                               params=indicator_params[indicator_key],
+                               plot_div=plot_div,
+                               labels=labels,
+                               time_range=time_range
+        )
 
     # GET
-    return render_template('index.html', indicators=get_indicator_keys())
+    return render_template('index.html', shown_indicator=get_indicator_keys())
 
 @app.route('/clear_cache')
 def clear_cache():

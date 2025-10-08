@@ -25,6 +25,7 @@
   <button type="submit" name="time_range" value="2Y" class="tab {% if time_range=='2Y' %}active{% endif %}">2 Years</button>
 </div>
 
+  <p>Select indicator:</p>
   <div class="tabs" style="margin-top: 12px;">
     <!-- each button is a submit that carries an 'indicator' value -->
     <button type="submit" name="indicator" value="" class="tab">Close Prices</button>
@@ -33,8 +34,43 @@
     <button type="submit" name="indicator" value="rsi" class="tab">RSI</button>
     <button type="submit" name="indicator" value="macd" class="tab">MACD</button>
   </div>
-</form>
 
+  {% if shown_indicator %}
+    <div id="editable-params" style="margin-top:12px;">
+      <h3>{{ shown_indicator|upper }} parameters</h3>
+
+        {% if params %} 
+          {% for key, value in params.items() %}
+          <div class="param-field">
+            <label for="{{ key }}">{{ key }}:</label>
+            
+            {# Determine input type based on value type #}
+            {% if value is number %}
+              <input type="number" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
+            {% elif value is string %}
+              <input type="text" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
+            {% elif value is boolean %}
+              <select id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" class="param-select">
+                <option value="true" {% if value %}selected{% endif %}>True</option>
+                <option value="false" {% if not value %}selected{% endif %}>False</option>
+              </select>
+            {% else %}
+              <input type="text" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
+            {% endif %}
+          </div>
+          {% endfor %}
+
+        {% else %}
+          <p>No parameter metadata for this indicator — defaults will be used.</p>
+        {% endif %}
+    </div>
+  {% endif %}
+
+  <div style="margin-top:8px;">
+    <button type="submit" name="apply" value="1">Update parameters</button>
+  </div>
+
+</form>      
 
 {% if error %}
   <p style="color:red">{{ error }}</p>
@@ -43,7 +79,7 @@
 {# If a plot has been generated, render it directly below the options (no separate page) #}
 {% if plot_div %}
   <div id="plot-area" style="margin-top:20px;">
-    <h2>Analysis Results {% if indicator %} - {{ indicator|upper }}{% endif %}</h2>
+    <h2>Analysis Results {% if shown_indicator %} - {{ shown_indicator|upper }}{% endif %}</h2>
     <ul>
       {% for label in labels %}
         <li>{{ label }}</li>
