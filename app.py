@@ -144,7 +144,7 @@ def index():
                 try:
                     df_with_ind = apply_indicator(df, indicator_key, params=indicator_params[indicator_key])
                 except Exception as e:
-                    return render_template('index.html', shown_indicator=indicator_key, error=f'Indicator error: {e}')
+                    return render_template('index.html', shown_indicator=indicator_key, params=indicator_params.get(indicator_key, {}), error=f'Indicator error: {e}')
             else:
                 df_with_ind = df.copy()
             applied.append(df_with_ind)
