@@ -133,7 +133,7 @@ def index():
 
         applied = []
         for df in dfs:
-            if indicator_key:
+            if indicator_key not in [None, 'close']:
                 try:
                     df_with_ind = apply_indicator(df, indicator_key, params=indicator_params[indicator_key])
                 except Exception as e:
@@ -144,21 +144,21 @@ def index():
 
         # Build plot
         try:
-            plot_div = plot_close_prices(applied, labels, indicator_key=indicator_key, indicator_params=indicator_params[indicator_key])
+            plot_div = plot_close_prices(applied, labels, indicator_key=indicator_key, indicator_params=indicator_params.get(indicator_key, {}))
         except Exception as e:
             return render_template('index.html', shown_indicator=indicator_key, error=f'Plotting error: {e}')
 
         # Render the SAME index.html but include the plot fragment and labels.
         return render_template('index.html',
                                shown_indicator=indicator_key,
-                               params=indicator_params[indicator_key],
+                               params=indicator_params.get(indicator_key, {}),
                                plot_div=plot_div,
                                labels=labels,
                                time_range=time_range
         )
 
     # GET
-    return render_template('index.html', shown_indicator=get_indicator_keys())
+    return render_template('index.html')
 
 @app.route('/clear_cache')
 def clear_cache():

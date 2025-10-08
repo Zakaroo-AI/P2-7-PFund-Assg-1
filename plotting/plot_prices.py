@@ -2,6 +2,7 @@
 from typing import List
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.io as pio
 from plotly.subplots import make_subplots
 
 
@@ -171,5 +172,82 @@ def plot_close_prices(
     # Also update y-axes to show spikes
     fig.update_yaxes(showspikes=True, spikemode='across', spikethickness=1)
 
-    # Return an HTML fragment you can place directly into the Jinja template
-    return fig.to_html(full_html=False, include_plotlyjs="cdn")
+    # Add a small post_script that inserts a control panel of checkboxes before the plot.
+    # It uses the '{plot_id}' placeholder which plotly.io.to_html replaces with the generated div id.
+    post_script = r"""
+    (function() {
+      var gd = document.getElementById('{plot_id}');
+      if (!gd) return;
+
+      // Create a controls container and simple styling
+      var ctrl = document.createElement('div');
+      ctrl.id = '{plot_id}-controls';
+      ctrl.style.margin = '8px 0';
+      ctrl.style.fontFamily = 'Arial, sans-serif';
+      ctrl.style.fontSize = '13px';
+
+      // Create Select All / Clear All buttons
+      var btnAll = document.createElement('button');
+      btnAll.textContent = 'Select all';
+      btnAll.style.marginRight = '8px';
+      btnAll.onclick = function(e) {
+        e.preventDefault();
+        for (var i = 0; i < gd.data.length; i++) {
+          Plotly.restyle(gd, {'visible': true}, [i]);
+          var cb = document.getElementById('{plot_id}-cb-' + i);
+          if (cb) cb.checked = true;
+        }
+      };
+      var btnNone = document.createElement('button');
+      btnNone.textContent = 'Clear all';
+      btnNone.style.marginRight = '12px';
+      btnNone.onclick = function(e) {
+        e.preventDefault();
+        for (var i = 0; i < gd.data.length; i++) {
+          Plotly.restyle(gd, {'visible': 'legendonly'}, [i]);
+          var cb = document.getElementById('{plot_id}-cb-' + i);
+          if (cb) cb.checked = false;
+        }
+      };
+
+      ctrl.appendChild(btnAll);
+      ctrl.appendChild(btnNone);
+
+      // Create inline checkbox list for every trace (only traces are toggleable)
+      for (var i = 0; i < gd.data.length; i++) {
+        (function(i) {
+          var tr = gd.data[i];
+          var label = document.createElement('label');
+          label.style.marginRight = '10px';
+          label.style.whiteSpace = 'nowrap';
+          label.style.display = 'inline-flex';
+          label.style.alignItems = 'center';
+
+          var cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.id = '{plot_id}-cb-' + i;
+
+          // Checked if trace is visible (not 'legendonly' or false)
+          cb.checked = (tr.visible !== 'legendonly' && tr.visible !== false);
+
+          cb.onchange = function() {
+            var vis = this.checked ? true : 'legendonly';
+            Plotly.restyle(gd, {'visible': vis}, [i]);
+          };
+
+          var txt = document.createTextNode(' ' + (tr.name || ('trace ' + i)));
+          label.appendChild(cb);
+          label.appendChild(txt);
+
+          ctrl.appendChild(label);
+        })(i);
+      }
+
+      // Insert the controls just before the plot
+      gd.parentNode.insertBefore(ctrl, gd);
+    })();
+    """
+
+    # Return HTML fragment; post_script will be injected with the correct plot div id.
+    # include_plotlyjs="cdn" keeps the same behaviour as before (loads plotly from CDN)
+    return pio.to_html(fig, full_html=False, include_plotlyjs="cdn", post_script=post_script)
