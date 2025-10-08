@@ -26,7 +26,8 @@ uploaded_cache = {
 
 # viewing: current indicator, retrievable across requests
 indicator_params = {
-    'viewing': None
+    'viewing': None,
+    'timeframe': None  # default is 1 year
 }
 # auto populating uploaded_cache's params dictionary with default parameters for each indicator
 try:
@@ -51,14 +52,17 @@ def index():
         # Read form inputs
         ticker1 = request.form.get('ticker1', '').strip() or None
         ticker2 = request.form.get('ticker2', '').strip() or None
-        time_range = request.form.get('time_range', '1Y')  # '1M','3M','6M','1Y','2Y'
+        time_range = request.form.get('time_range') or indicator_params['timeframe']  # '1M','3M','6M','1Y','2Y'
+        print('timerange!!!', time_range)
         
         indicator_key = request.form.get('indicator')# 'sma', 'ema', ...
 
+        # edit indicator_params for next request
         if indicator_key:
             indicator_params['viewing'] = indicator_key
         else:
             indicator_key = indicator_params['viewing']
+        indicator_params['timeframe'] = time_range
 
         # collect datasets (list of DataFrames) and labels
         dfs = []
@@ -120,14 +124,17 @@ def index():
         if not dfs:
             return render_template('index.html', shown_indicator=indicator_key, error='No data provided. Provide a ticker or upload a CSV.')
         
-        # Update parameters with user's inputs
-        for key in request.form.keys():
-            # all parameters in request.form start with indicator_
-            if key.startswith(indicator_key):
-                # extract only the parameter name (some parameters have _ in their name)
-                param = key.split('_', 1)[1]
-                # all parameters have to be integer
-                indicator_params[indicator_key][param] = int(request.form.get(key))
+        try:
+            # Update parameters with user's inputs
+            for key in request.form.keys():
+                # all parameters in request.form start with indicator_
+                if key.startswith(indicator_key):
+                    # extract only the parameter name (some parameters have _ in their name)
+                    param = key.split('_', 1)[1]
+                    # all parameters have to be integer
+                    indicator_params[indicator_key][param] = int(request.form.get(key))
+        except Exception as e:
+            print(f'line 134 is error: {e}')
 
         print('zkdebug3', indicator_params, indicator_key)
 
