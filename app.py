@@ -1,5 +1,5 @@
 # app.py (updated)
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request
 import os, json, copy
 from werkzeug.utils import secure_filename
 import pandas as pd
