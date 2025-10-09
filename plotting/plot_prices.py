@@ -3,6 +3,7 @@ from typing import List
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
+from indicators.registry import apply_indicator
 from plotly.subplots import make_subplots
 
 
@@ -151,6 +152,43 @@ def plot_close_prices(
                     row=2,
                     col=1,
                 )
+    elif indicator_key == "dailyr":
+        for df, label in zip(clean_dfs, labels):
+            df = apply_indicator(df, "dailyr", indicator_params)
+            if "DailyR" not in df.columns:
+                continue
+
+            # Create a color series: green if return >= 0, else red
+            df["Color"] = df["DailyR"].apply(lambda x: "green" if x >= 0 else "red")
+
+            # Build a separate segment between each point so line colors change
+            for i in range(1, len(df)):
+                prev = df.iloc[i - 1]
+                curr = df.iloc[i]
+                if pd.isna(prev["Close"]) or pd.isna(curr["Close"]):
+                    continue
+
+                color = curr["Color"]
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=[prev["Date"], curr["Date"]],
+                        y=[prev["Close"], curr["Close"]],
+                        mode="lines",
+                        line=dict(color=color, width=2),
+                        name=f"{label} Return ({color})",
+                        hovertemplate=(
+                            "%{x}<br>"
+                            "Close: %{y:.2f}<br>"
+                            f"Daily Return: {curr['DailyR']:.2f}%<extra></extra>"
+                        ),
+                        showlegend=False,  # hide per-segment legends
+                    ),
+                    row=1,
+                    col=1,  # ✅ no secondary_y
+                )
+
+        fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
 
     # Layout tweaks
     fig.update_layout(
@@ -250,4 +288,7 @@ def plot_close_prices(
 
     # Return HTML fragment; post_script will be injected with the correct plot div id.
     # include_plotlyjs="cdn" keeps the same behaviour as before (loads plotly from CDN)
+    if indicator_key == "dailyr":
+        return pio.to_html(fig, full_html=False, include_plotlyjs="cdn")
+    
     return pio.to_html(fig, full_html=False, include_plotlyjs="cdn", post_script=post_script)
