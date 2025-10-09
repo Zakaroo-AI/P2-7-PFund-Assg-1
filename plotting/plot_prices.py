@@ -161,6 +161,9 @@ def plot_close_prices(
 
             # Create color column for each day
             df["Color"] = df["DailyR"].apply(lambda x: "green" if x >= 0 else "red")
+            df["IndicatorText"] = df["DailyR"].apply(
+                lambda x: "📈 Positive Day" if x >= 0 else "📉 Negative Day"
+            )
 
             # --- 1️⃣ Create color-changing segments (no hover) ---
             for i in range(1, len(df)):
@@ -183,8 +186,15 @@ def plot_close_prices(
                     row=1,
                     col=1,
                 )
+                
 
             # --- 2️⃣ Add invisible overlay line just for hover info ---
+            df["HoverText"] = df["DailyR"].apply(
+                lambda x: f"<b><span style='color:green'>📈 Daily Return: +{x:.2f}%</span></b>"
+                if x >= 0
+                else f"<b><span style='color:red'>📉 Daily Return: {x:.2f}%</span></b>"
+            )
+
             fig.add_trace(
                 go.Scatter(
                     x=df["Date"],
@@ -192,17 +202,17 @@ def plot_close_prices(
                     mode="lines",
                     line=dict(color="rgba(0,0,0,0)", width=6),  # invisible hover line
                     name=f"{label} Daily Return",
-                    customdata=df["DailyR"],
+                    customdata=df["HoverText"],
                     hovertemplate=(
                         "%{x}<br>"
                         "Close: %{y:.2f}<br>"
-                        "Daily Return: %{customdata:.2f}%<extra></extra>"
+                        "%{customdata}<extra></extra>"
                     ),
+                    hoverlabel=dict(align="left"),
                 ),
                 row=1,
                 col=1,
             )
-
         # Update axis label
         fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
 
