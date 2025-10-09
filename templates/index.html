@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
+
 <form method="POST" enctype="multipart/form-data">
   <label for="ticker1">Enter Stock Ticker 1:</label>
   <input type="text" name="ticker1" id="ticker1" placeholder="AAPL" value="{{ request.form.ticker1 or '' }}">
@@ -14,77 +15,107 @@
   <button type="submit" name="remove_file" value="remove_file1">Remove File 1</button>
   <!-- Clear button for uploaded file 1 -->
 
-  <p>Upload second CSV (optional)</p>
+  <p>Upload second CSV (optional):</p>
   <input type="file" name="file2" accept=".csv">
   <label>{% if labels %}{{ labels[1] }}{% endif %}</label>
-  <button type="submit" name="remove_file" value="remove_file2">Remove File 2</button>
-  <!-- Clear button for uploaded file 2 -->
 
   <p>Select timeframe:</p>
   <div class="tabs" style="margin-top: 12px;">
-  <button type="submit" name="time_range" value="1M" class="tab {% if time_range=='1M' %}active{% endif %}">1 Month</button>
-  <button type="submit" name="time_range" value="3M" class="tab {% if time_range=='3M' %}active{% endif %}">3 Months</button>
-  <button type="submit" name="time_range" value="6M" class="tab {% if time_range=='6M' %}active{% endif %}">6 Months</button>
-  <button type="submit" name="time_range" value="1Y" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}">1 Year</button>
-  <button type="submit" name="time_range" value="2Y" class="tab {% if time_range=='2Y' %}active{% endif %}">2 Years</button>
-</div>
+    <button type="submit" name="time_range" value="1M" class="tab {% if time_range=='1M' %}active{% endif %}">1 Month</button>
+    <button type="submit" name="time_range" value="3M" class="tab {% if time_range=='3M' %}active{% endif %}">3 Months</button>
+    <button type="submit" name="time_range" value="6M" class="tab {% if time_range=='6M' %}active{% endif %}">6 Months</button>
+    <button type="submit" name="time_range" value="1Y" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}">1 Year</button>
+    <button type="submit" name="time_range" value="2Y" class="tab {% if time_range=='2Y' %}active{% endif %}">2 Years</button>
+  </div>
 
   <p>Select indicator:</p>
   <div class="tabs" style="margin-top: 12px;">
-    <!-- each button is a submit that carries an 'indicator' value -->
     <button type="submit" name="indicator" value="close" class="tab">Close Prices</button>
     <button type="submit" name="indicator" value="sma" class="tab">SMA</button>
     <button type="submit" name="indicator" value="ema" class="tab">EMA</button>
     <button type="submit" name="indicator" value="rsi" class="tab">RSI</button>
     <button type="submit" name="indicator" value="macd" class="tab">MACD</button>
+    <button type="submit" name="indicator" value="dailyr" class="tab">Daily Returns</button>
   </div>
 
   {% if shown_indicator %}
     <div id="editable-params" style="margin-top:12px;">
-      <h3>{{ shown_indicator|upper }} parameters</h3>
+      <h3>{{ shown_indicator|upper }} Parameters</h3>
 
-        {% if params %} 
-          {% for key, value in params.items() %}
-          <div class="param-field">
-            <label for="{{ key }}">{{ key }}:</label>
-            
-            {# Determine input type based on value type #}
-            {% if value is number %}
-              <input type="number" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
-            {% elif value is string %}
-              <input type="text" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
-            {% elif value is boolean %}
-              <select id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" class="param-select">
-                <option value="true" {% if value %}selected{% endif %}>True</option>
-                <option value="false" {% if not value %}selected{% endif %}>False</option>
-              </select>
-            {% else %}
-              <input type="text" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
-            {% endif %}
-          </div>
-          {% endfor %}
-
-        {% else %}
-          <p>No parameter metadata for this indicator — defaults will be used.</p>
-        {% endif %}
+      {% if params %}
+        {% for key, value in params.items() %}
+        <div class="param-field">
+          <label for="{{ key }}">{{ key }}:</label>
+          {% if value is number %}
+            <input type="number" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
+          {% elif value is string %}
+            <input type="text" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
+          {% elif value is boolean %}
+            <select id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" class="param-select">
+              <option value="true" {% if value %}selected{% endif %}>True</option>
+              <option value="false" {% if not value %}selected{% endif %}>False</option>
+            </select>
+          {% else %}
+            <input type="text" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <p>No parameter metadata for this indicator — defaults will be used.</p>
+      {% endif %}
     </div>
-    
-  <div style="margin-top:8px;">
-    <button type="submit" name="apply" value="1">Update parameters</button>
-  </div>
+
+    <div style="margin-top:8px;">
+      <button type="submit" name="apply" value="1">Update Parameters</button>
+    </div>
   {% endif %}
 
-  
-</form>      
+  <div style="margin-top: 15px;">
+    <label>
+      <input type="checkbox" name="show_preprocessed" value="1"
+             {% if show_preprocessed %}checked{% endif %}>
+      Show preprocessed data preview
+    </label>
+  </div>
+</form>
 
 {% if error %}
   <p style="color:red">{{ error }}</p>
 {% endif %}
 
-{# If a plot has been generated, render it directly below the options (no separate page) #}
+{# === Stock Summary Cards === #}
+{% if summaries %}
+  <div class="stock-summary-container">
+    {% for s in summaries %}
+      <div class="stock-summary-card">
+        <div class="stock-left">
+          {% if s.logo %}
+            <img src="{{ s.logo }}" alt="{{ s.symbol }} logo" class="stock-logo">
+          {% endif %}
+          <div>
+            <h3>{{ s.name }}</h3>
+            <p>{{ s.symbol }}</p>
+          </div>
+        </div>
+        <div class="stock-right">
+          {% if s.price %}
+            <h3>${{ "%.2f"|format(s.price) }}</h3>
+          {% endif %}
+          {% if s.change %}
+            <span class="change {% if s.change >= 0 %}pos{% else %}neg{% endif %}">
+              {{ "%+.2f"|format(s.change) }} ({{ "%+.2f"|format(s.pct) }}%)
+            </span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{# === Chart Section === #}
 {% if plot_div %}
   <div id="plot-area" style="margin-top:20px;">
-    <h2>Analysis Results {% if shown_indicator %} - {{ shown_indicator|upper }}{% endif %}</h2>
+    <h2>Analysis Results {% if shown_indicator %}- {{ shown_indicator|upper }}{% endif %}</h2>
     <ul>
       {% for label in labels %}
         <li>{{ label }}</li>
@@ -92,7 +123,16 @@
     </ul>
     <div id="plot-container">
       {{ plot_div | safe }}
-    </div>    
+    </div>
   </div>
 {% endif %}
+
+{# === Preprocessed Data Preview === #}
+{% if preprocessed_html %}
+  <h3 style="margin-top:30px;">🧩 Preprocessed Data Preview</h3>
+  <div class="scroll-container">
+    {{ preprocessed_html | safe }}
+  </div>
+{% endif %}
+
 {% endblock %}

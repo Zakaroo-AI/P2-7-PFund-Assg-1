@@ -3,6 +3,7 @@ from typing import List
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
+from indicators.registry import apply_indicator
 from plotly.subplots import make_subplots
 
 
@@ -151,6 +152,59 @@ def plot_close_prices(
                     row=2,
                     col=1,
                 )
+    elif indicator_key == "dailyr":
+        for df, label in zip(clean_dfs, labels):
+            # Apply the indicator
+            df = apply_indicator(df, "dailyr", indicator_params)
+            if "DailyR" not in df.columns:
+                continue
+
+            # Create color column for each day
+            df["Color"] = df["DailyR"].apply(lambda x: "green" if x >= 0 else "red")
+
+            # --- 1️⃣ Create color-changing segments (no hover) ---
+            for i in range(1, len(df)):
+                prev = df.iloc[i - 1]
+                curr = df.iloc[i]
+                if pd.isna(prev["Close"]) or pd.isna(curr["Close"]):
+                    continue
+
+                color = curr["Color"]
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=[prev["Date"], curr["Date"]],
+                        y=[prev["Close"], curr["Close"]],
+                        mode="lines",
+                        line=dict(color=color, width=2),
+                        showlegend=False,
+                        hoverinfo="skip",  # ❌ disable hover for segments
+                    ),
+                    row=1,
+                    col=1,
+                )
+
+            # --- 2️⃣ Add invisible overlay line just for hover info ---
+            fig.add_trace(
+                go.Scatter(
+                    x=df["Date"],
+                    y=df["Close"],
+                    mode="lines",
+                    line=dict(color="rgba(0,0,0,0)", width=6),  # invisible hover line
+                    name=f"{label} Daily Return",
+                    customdata=df["DailyR"],
+                    hovertemplate=(
+                        "%{x}<br>"
+                        "Close: %{y:.2f}<br>"
+                        "Daily Return: %{customdata:.2f}%<extra></extra>"
+                    ),
+                ),
+                row=1,
+                col=1,
+            )
+
+        # Update axis label
+        fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
 
     # Layout tweaks
     fig.update_layout(
@@ -250,4 +304,7 @@ def plot_close_prices(
 
     # Return HTML fragment; post_script will be injected with the correct plot div id.
     # include_plotlyjs="cdn" keeps the same behaviour as before (loads plotly from CDN)
+    if indicator_key == "dailyr":
+        return pio.to_html(fig, full_html=False, include_plotlyjs="cdn")
+    
     return pio.to_html(fig, full_html=False, include_plotlyjs="cdn", post_script=post_script)

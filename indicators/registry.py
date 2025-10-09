@@ -3,6 +3,7 @@ from .sma import calculate_sma
 from .ema import calculate_ema
 from .rsi import calculate_rsi
 from .macd import calculate_macd
+from .dailyr import calculate_dailyr
 
 # Registry: key -> metadata
 INDICATORS = {
@@ -30,6 +31,12 @@ INDICATORS = {
         "default_params": {"fast_period": 12, "slow_period": 26, "signal_period": 9},
         "columns": lambda p: ["MACD", "MACD_signal", "MACD_hist"],
         "plot_kind": "separate_macd",  # macd histogram + signal in second subplot
+    },
+    "dailyr": {
+        "func": calculate_dailyr,
+        "default_params": {},  # no parameters needed
+        "columns": lambda p: ["DailyR"],
+        "plot_kind": "separate_dailyr",  # show on its own subplot
     },
 }
 
