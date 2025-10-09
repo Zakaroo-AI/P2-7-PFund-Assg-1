@@ -20,8 +20,8 @@ def get_stock_data(ticker=None, filepath=None):
         return df, label
 
     elif ticker:
-        data = yf.Ticker(ticker).history(period='3y')
         # data = yf.download(ticker, progress=False)
+        data = yf.Ticker(ticker).history(period = '3y')
         if data.empty:
             raise ValueError(f"No data found for ticker '{ticker}'.")
         data.reset_index(inplace=True)
