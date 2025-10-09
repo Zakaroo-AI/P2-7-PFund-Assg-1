@@ -11,10 +11,14 @@
   <p>Upload CSV (optional):</p>
   <input type="file" name="file1" accept=".csv">
   <label>{% if labels %}{{ labels[0] }}{% endif %}</label>
+  <button type="submit" name="remove_file" value="remove_file1">Remove File 1</button>
+  <!-- Clear button for uploaded file 1 -->
 
   <p>Upload second CSV (optional)</p>
   <input type="file" name="file2" accept=".csv">
   <label>{% if labels %}{{ labels[1] }}{% endif %}</label>
+  <button type="submit" name="remove_file" value="remove_file2">Remove File 2</button>
+  <!-- Clear button for uploaded file 2 -->
 
   <p>Select timeframe:</p>
   <div class="tabs" style="margin-top: 12px;">
@@ -92,4 +96,3 @@
   </div>
 {% endif %}
 {% endblock %}
-

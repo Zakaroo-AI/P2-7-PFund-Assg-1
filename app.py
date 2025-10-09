@@ -1,5 +1,5 @@
 # app.py (updated)
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import os, json, copy
 from werkzeug.utils import secure_filename
 import pandas as pd
@@ -53,8 +53,9 @@ def index():
         ticker1 = request.form.get('ticker1', '').strip() or None
         ticker2 = request.form.get('ticker2', '').strip() or None
         time_range = request.form.get('time_range') or indicator_params['timeframe']  # '1M','3M','6M','1Y','2Y'
-        print('timerange!!!', time_range)
-        
+        remove_file = request.form.get('remove_file') or None
+        # print('timerange!!!', time_range)
+        print('zkdebug_action', remove_file)
         indicator_key = request.form.get('indicator')# 'sma', 'ema', ...
 
         # edit indicator_params for next request
@@ -63,6 +64,10 @@ def index():
         else:
             indicator_key = indicator_params['viewing']
         indicator_params['timeframe'] = time_range
+
+        if remove_file:
+            uploaded_cache[f'file{remove_file[-1]}'] = None # remove_file = remove_file1 or remove_file2
+            uploaded_cache['filenames'][f'file{remove_file[-1]}'] = None
 
         # collect datasets (list of DataFrames) and labels
         dfs = []
@@ -166,13 +171,6 @@ def index():
 
     # GET
     return render_template('index.html')
-
-@app.route('/clear_cache')
-def clear_cache():
-    uploaded_cache["file1"] = None
-    uploaded_cache["file2"] = None
-    uploaded_cache["labels"] = {"file1": None, "file2": None}
-    return "Cache cleared."
 
 if __name__ == '__main__':
     app.run(debug=True)
