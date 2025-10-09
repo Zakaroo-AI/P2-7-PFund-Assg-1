@@ -60,13 +60,19 @@ def plot_close_prices(
 
     # Add price traces
     for df, label in zip(clean_dfs, labels):
+        # Conditional hover: hide when DailyR is active
+        close_hover_args = (
+            dict(hoverinfo="skip") if indicator_key == "dailyr"
+            else dict(hovertemplate="%{x|%Y-%m-%d}<br>Close: %{y:.2f}<extra></extra>")
+        )
+
         fig.add_trace(
             go.Scatter(
                 x=df["Date"],
                 y=df["Close"],
                 mode="lines",
                 name=f"{label} Close",
-                hovertemplate="%{x}<br>Close: %{y:.2f}<extra></extra>",
+                **close_hover_args,   # ✅ Let this fully control hover behavior
             ),
             row=1,
             col=1,
@@ -152,6 +158,8 @@ def plot_close_prices(
                     row=2,
                     col=1,
                 )
+
+#========================================= Daily Returns =========================================#
     elif indicator_key == "dailyr":
         for df, label in zip(clean_dfs, labels):
             # Apply the indicator
@@ -159,42 +167,42 @@ def plot_close_prices(
             if "DailyR" not in df.columns:
                 continue
 
-            # Create color column for each day
+            # --- Color coding ---
             df["Color"] = df["DailyR"].apply(lambda x: "green" if x >= 0 else "red")
-            df["IndicatorText"] = df["DailyR"].apply(
-                lambda x: "📈 Positive Day" if x >= 0 else "📉 Negative Day"
-            )
 
-            # --- 1️⃣ Create color-changing segments (no hover) ---
+            # --- Build color-changing segments (visual only, no hover) ---
             for i in range(1, len(df)):
                 prev = df.iloc[i - 1]
                 curr = df.iloc[i]
                 if pd.isna(prev["Close"]) or pd.isna(curr["Close"]):
                     continue
 
-                color = curr["Color"]
-
                 fig.add_trace(
                     go.Scatter(
                         x=[prev["Date"], curr["Date"]],
                         y=[prev["Close"], curr["Close"]],
                         mode="lines",
-                        line=dict(color=color, width=2),
+                        line=dict(color=curr["Color"], width=2),
                         showlegend=False,
-                        hoverinfo="skip",  # ❌ disable hover for segments
+                        hoverinfo="skip",  # prevent hover duplication
                     ),
                     row=1,
                     col=1,
                 )
-                
 
-            # --- 2️⃣ Add invisible overlay line just for hover info ---
-            df["HoverText"] = df["DailyR"].apply(
-                lambda x: f"<b><span style='color:green'>📈 Daily Return: +{x:.2f}%</span></b>"
-                if x >= 0
-                else f"<b><span style='color:red'>📉 Daily Return: {x:.2f}%</span></b>"
+            # --- Compute daily change and hover text ---
+            df["PriceChange"] = df["Close"].diff()
+
+            df["HoverText"] = df.apply(
+                lambda row: (
+                    f"<b><span style='color:green'>📈 Daily Return: +{row['DailyR']:.2f}% (+${abs(row['PriceChange']):.2f})</span></b>"
+                    if row["DailyR"] >= 0
+                    else f"<b><span style='color:red'>📉 Daily Return: {row['DailyR']:.2f}% (-${abs(row['PriceChange']):.2f})</span></b>"
+                ),
+                axis=1
             )
 
+            # --- Invisible overlay line for hover info only ---
             fig.add_trace(
                 go.Scatter(
                     x=df["Date"],
@@ -204,17 +212,24 @@ def plot_close_prices(
                     name=f"{label} Daily Return",
                     customdata=df["HoverText"],
                     hovertemplate=(
-                        "%{x}<br>"
-                        "Close: %{y:.2f}<br>"
+                        "<b>Date:</b> %{x|%Y-%m-%d}<br>"
+                        "<b>Close:</b> %{y:.2f}<br>"
                         "%{customdata}<extra></extra>"
                     ),
-                    hoverlabel=dict(align="left"),
+                    hoverlabel=dict(
+                        bgcolor="white",
+                        bordercolor="rgba(0,0,0,0.1)",
+                        font=dict(color="black", size=12, family="Arial"),
+                        align="left",
+                        namelength=0,
+                    ),
+                    showlegend=False,
                 ),
                 row=1,
                 col=1,
             )
 
-            # --- 💰 Draw Max Profit Annotation ---
+            # --- 💰 Max Profit annotation ---
             if not pd.isna(df["Buy_Date"].iloc[-1]) and not pd.isna(df["Sell_Date"].iloc[-1]):
                 buy_date = df["Buy_Date"].iloc[-1]
                 sell_date = df["Sell_Date"].iloc[-1]
@@ -231,7 +246,7 @@ def plot_close_prices(
                     y1=sell_price,
                     line=dict(color="green", dash="dot"),
                     fillcolor="rgba(0,255,0,0.08)",
-                    layer="below"
+                    layer="below",
                 )
 
                 fig.add_annotation(
@@ -252,14 +267,17 @@ def plot_close_prices(
                     borderwidth=1,
                     font=dict(color="green", size=12),
                 )
-        # Update axis label
+
+        # Match other charts’ axis and hover feel
         fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
+#========================================= Daily Returns =========================================#
+
 
     # Layout tweaks
     fig.update_layout(
         height=700,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        hovermode="x unified",
+        hovermode="closest" if indicator_key == "dailyr" else "x unified",
         margin=dict(l=50, r=20, t=50, b=50),
         template="plotly_white",
     )
@@ -350,6 +368,7 @@ def plot_close_prices(
       gd.parentNode.insertBefore(ctrl, gd);
     })();
     """
+
 
     # Return HTML fragment; post_script will be injected with the correct plot div id.
     # include_plotlyjs="cdn" keeps the same behaviour as before (loads plotly from CDN)
