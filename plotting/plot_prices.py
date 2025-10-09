@@ -154,14 +154,15 @@ def plot_close_prices(
                 )
     elif indicator_key == "dailyr":
         for df, label in zip(clean_dfs, labels):
+            # Apply the indicator
             df = apply_indicator(df, "dailyr", indicator_params)
             if "DailyR" not in df.columns:
                 continue
 
-            # Create a color series: green if return >= 0, else red
+            # Create color column for each day
             df["Color"] = df["DailyR"].apply(lambda x: "green" if x >= 0 else "red")
 
-            # Build a separate segment between each point so line colors change
+            # --- 1️⃣ Create color-changing segments (no hover) ---
             for i in range(1, len(df)):
                 prev = df.iloc[i - 1]
                 curr = df.iloc[i]
@@ -176,18 +177,33 @@ def plot_close_prices(
                         y=[prev["Close"], curr["Close"]],
                         mode="lines",
                         line=dict(color=color, width=2),
-                        name=f"{label} Return ({color})",
-                        hovertemplate=(
-                            "%{x}<br>"
-                            "Close: %{y:.2f}<br>"
-                            f"Daily Return: {curr['DailyR']:.2f}%<extra></extra>"
-                        ),
-                        showlegend=False,  # hide per-segment legends
+                        showlegend=False,
+                        hoverinfo="skip",  # ❌ disable hover for segments
                     ),
                     row=1,
-                    col=1,  # ✅ no secondary_y
+                    col=1,
                 )
 
+            # --- 2️⃣ Add invisible overlay line just for hover info ---
+            fig.add_trace(
+                go.Scatter(
+                    x=df["Date"],
+                    y=df["Close"],
+                    mode="lines",
+                    line=dict(color="rgba(0,0,0,0)", width=6),  # invisible hover line
+                    name=f"{label} Daily Return",
+                    customdata=df["DailyR"],
+                    hovertemplate=(
+                        "%{x}<br>"
+                        "Close: %{y:.2f}<br>"
+                        "Daily Return: %{customdata:.2f}%<extra></extra>"
+                    ),
+                ),
+                row=1,
+                col=1,
+            )
+
+        # Update axis label
         fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
 
     # Layout tweaks
