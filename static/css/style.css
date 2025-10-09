@@ -27,3 +27,100 @@ button {
 button:hover {
   background: #0056b3;
 }
+/* === Stock summary cards === */
+.stock-summary-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stock-summary-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+  border-left: 4px solid #007bff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.stock-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: white;
+  border: 1px solid #eee;
+}
+
+.stock-left h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #222;
+}
+
+.stock-left p {
+  margin: 0;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.stock-right h3 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.change {
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  color: #fff;
+  margin-left: 8px;
+}
+
+.change.pos {
+  background: #28a745;
+}
+
+.change.neg {
+  background: #dc3545;
+}
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.data-table th, .data-table td {
+  border: 1px solid #ddd;
+  padding: 6px 10px;
+  text-align: right;
+}
+
+.data-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.scrollable-table {
+  max-height: 400px;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 10px;
+}
+
+input[type="checkbox"] {
+  transform: scale(1.2);
+  margin-right: 6px;
+}
