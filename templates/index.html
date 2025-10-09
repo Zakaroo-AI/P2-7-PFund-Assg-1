@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Stock Analysis{% endblock %}
 {% block content %}
 <form method="POST" enctype="multipart/form-data">
   <label for="ticker1">Enter Stock Ticker 1:</label>
@@ -9,12 +9,14 @@
   <input type="text" name="ticker2" id="ticker2" placeholder="MSFT" value="{{ request.form.ticker2 or '' }}">
 
   <p>Upload CSV (optional):</p>
-  <input type="file" name="file1" accept=".csv">
-  <label>{% if labels %}{{ labels[0] }}{% endif %}</label>
+  <input type="file" name="file1" accept=".csv" style="display: none;" id="actual-file-input-1"/>
+  <button type="button" onclick="document.getElementById('actual-file-input-1').click();">Choose File</button>
+  <span id="file-name-1">{% if labels %}{{ labels[0] }}{% else %}No file chosen{% endif %}</span>
 
   <p>Upload second CSV (optional)</p>
-  <input type="file" name="file2" accept=".csv">
-  <label>{% if labels %}{{ labels[1] }}{% endif %}</label>
+  <input type="file" name="file2" accept=".csv" style="display: none;" id="actual-file-input-2"/>
+  <button type="button" onclick="document.getElementById('actual-file-input-2').click();">Choose File</button>
+  <span id="file-name-2">{% if labels %}{{ labels[1] }}{% else %}No file chosen{% endif %}</span>
 
   <p>Select timeframe:</p>
   <div class="tabs" style="margin-top: 12px;">
