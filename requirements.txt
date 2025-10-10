@@ -85,6 +85,7 @@ typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/bld/rattle
 tzdata @ file:///croot/python-tzdata_1746123641790/work
 unicodedata2 @ file:///C:/b/abs_dfnftvxi4k/croot/unicodedata2_1736543771112/work
 urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1750271362675/work
+vaderSentiment==3.3.2
 wcwidth @ file:///home/conda/feedstock_root/build_artifacts/wcwidth_1733231326287/work
 webencodings @ file:///home/conda/feedstock_root/build_artifacts/webencodings_1733236011802/work
 Werkzeug==3.1.3
