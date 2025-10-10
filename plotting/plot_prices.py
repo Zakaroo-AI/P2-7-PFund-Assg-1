@@ -6,9 +6,29 @@ import plotly.io as pio
 from indicators.registry import apply_indicator
 from plotly.subplots import make_subplots
 
-
+#========================================= Presets =========================================#
 def _ensure_date_index(df: pd.DataFrame):
-    # Keep Date column (not index) to make template-independent
+    """
+    Ensure the DataFrame contains a 'Date' column and is sorted by date.
+
+    This helper is used to normalize input data before plotting.  
+    It resets the index if necessary and ensures that 'Date' exists and is sorted chronologically.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame that should contain a 'Date' column or have datetime index.
+
+    Returns
+    -------
+    pd.DataFrame
+        Cleaned and sorted DataFrame with a 'Date' column in ascending order.
+
+    Raises
+    ------
+    ValueError
+        If the input DataFrame has no 'Date' column and the index cannot be reset properly.
+    """
     if "Date" not in df.columns:
         if hasattr(df.index, "astype"):
             df = df.reset_index()
@@ -16,8 +36,9 @@ def _ensure_date_index(df: pd.DataFrame):
             raise ValueError("DataFrame must contain a 'Date' column")
     df = df.sort_values("Date").reset_index(drop=True)
     return df
+#========================================= Presets =========================================#
 
-
+#========================================= Plot & Graph Generation =========================================#
 def plot_close_prices(
     dfs: List[pd.DataFrame],
     labels: List[str],
@@ -25,12 +46,43 @@ def plot_close_prices(
     indicator_params: dict | None = None,
 ) -> str:
     """
-    Build an interactive Plotly chart and return HTML div fragment.
+    Generate an interactive Plotly chart for stock prices and indicators.
 
-    - dfs: list of DataFrames (each must contain 'Date' and 'Close')
-    - labels: list of labels for legends
-    - indicator_key: 'sma', 'ema', 'rsi', 'macd', 'close' or None (treat close and None the same)
-    - indicator_params: indicator-specific params (window, period, etc.)
+    This function takes one or more price DataFrames, applies optional technical indicators,
+    and returns an HTML string containing an interactive Plotly plot.  
+    The plot supports overlays like SMA, EMA, RSI, MACD, and Daily Returns visualization.
+
+    Parameters
+    ----------
+    dfs : list of pd.DataFrame
+        List of DataFrames, each containing at least 'Date' and 'Close' columns.
+    labels : list of str
+        List of labels corresponding to each DataFrame for legend display.
+    indicator_key : str, optional
+        Type of indicator to display. Supported values:
+        - ``'sma'`` : Simple Moving Average
+        - ``'ema'`` : Exponential Moving Average
+        - ``'rsi'`` : Relative Strength Index
+        - ``'macd'`` : Moving Average Convergence Divergence
+        - ``'dailyr'`` : Daily Returns visualization
+        - ``None`` : Plot raw close prices only.
+    indicator_params : dict, optional
+        Extra parameters passed to indicator computation (e.g., window size, period, etc.).
+
+    Returns
+    -------
+    str
+        HTML fragment containing the generated Plotly figure.
+        This can be directly embedded in web pages or rendered in notebooks.
+
+    Notes
+    -----
+    - The function dynamically adjusts subplot layout depending on the indicator.
+    - For ``'dailyr'`` mode, positive and negative returns are color-coded (green/red),
+      and a hover tooltip summarizes each day’s change.
+    - RSI and MACD modes add secondary plots below the price chart.
+    - A small checkbox control panel is inserted above the plot (for non-dailyr modes)
+      to toggle visibility of traces interactively.
     """
     indicator_key = indicator_key or None
     indicator_params = indicator_params or {}
@@ -38,14 +90,33 @@ def plot_close_prices(
     # Normalize dataframes
     clean_dfs = []
     for df in dfs:
+        """
+        Normalize and prepare each DataFrame before plotting.
+
+        - Ensures the presence of a 'Date' column.
+        - Converts non-datetime date columns into datetime (UTC-safe).
+        - Sorts all records by date ascending.
+
+        Output
+        ------
+        clean_dfs : list of pd.DataFrame
+            List of preprocessed DataFrames ready for plotting.
+        """
         dfc = _ensure_date_index(df.copy())
         # Convert date to string or to datetime is fine for plotly
         if not pd.api.types.is_datetime64_any_dtype(dfc["Date"]):
             dfc["Date"] = pd.to_datetime(dfc["Date"], errors="coerce", utc=True)
         clean_dfs.append(dfc)
 
+#========================================= Create Layout Based on Key Type =========================================#
     # Choose layout depending on indicator
     if indicator_key in ("rsi", "macd"):
+        """
+        Decide subplot configuration based on the selected indicator.
+
+        - RSI and MACD require two rows (main price chart + indicator below).
+        - Other indicators or plain Close plots use a single row.
+        """
         fig = make_subplots(
             rows=2,
             cols=1,
@@ -58,9 +129,19 @@ def plot_close_prices(
         # single plot: price + optional overlay indicators
         fig = make_subplots(rows=1, cols=1)
 
-    # Add price traces
+#========================================= Add Base Close Price Trace =========================================#
     for df, label in zip(clean_dfs, labels):
-        # Conditional hover: hide when DailyR is active
+        """
+        Plot the base 'Close' price line for each dataset.
+
+        Behavior
+        --------
+        - If `indicator_key == "dailyr"`, hover info is hidden
+        (since hover details are handled by a separate overlay line).
+        - Otherwise, show date and price on hover.
+
+        Each trace is added as a line in the first subplot.
+        """
         close_hover_args = (
             dict(hoverinfo="skip") if indicator_key == "dailyr"
             else dict(hovertemplate="%{x|%Y-%m-%d}<br>Close: %{y:.2f}<extra></extra>")
@@ -78,9 +159,21 @@ def plot_close_prices(
             col=1,
         )
 
-    # Add indicator traces
+#========================================= SMA & EMA =========================================#
     if indicator_key in ("sma", "ema"):
-        # overlay a single line per df; indicator column named by convention 'SMA_<n>' or 'EMA_<n>'
+        """
+        Plot overlay indicators for Simple Moving Average (SMA) or
+        Exponential Moving Average (EMA).
+
+        Each DataFrame is expected to contain a column:
+            - SMA_<window>  or  EMA_<window>
+        where <window> comes from `indicator_params["window"]` or `["period"]`.
+
+        Example
+        -------
+        If `indicator_key="sma"` and `window=20`,
+        column name should be 'SMA_20'.
+        """
         key = indicator_key.upper()
         window = indicator_params.get("window") or (indicator_params.get("period") or 20)
         colname = f"{key}_{window}"
@@ -98,8 +191,22 @@ def plot_close_prices(
                     col=1,
                 )
 
+#========================================= RSI =========================================#
     elif indicator_key == "rsi":
-        # RSI: add lines in row 2
+        """
+        Plot MACD (Moving Average Convergence Divergence) indicator.
+
+        Expected Columns
+        ----------------
+        - MACD
+        - MACD_signal
+        - MACD_hist
+
+        Behavior
+        --------
+        - Line plots for MACD and signal.
+        - Bar plot for histogram (positive/negative divergence).
+        """
         period = indicator_params.get("period", 14)
         rsi_col = f"RSI_{period}"
         for df, label in zip(clean_dfs, labels):
@@ -120,7 +227,22 @@ def plot_close_prices(
         fig.add_hline(y=30, line_dash="dash", row=2, col=1)
         fig.update_yaxes(range=[0, 100], row=2, col=1, title_text="RSI")
 
+#========================================= MACD =========================================#
     elif indicator_key == "macd":
+        """
+        Plot MACD (Moving Average Convergence Divergence) indicator.
+
+        Expected Columns
+        ----------------
+        - MACD
+        - MACD_signal
+        - MACD_hist
+
+        Behavior
+        --------
+        - Line plots for MACD and signal.
+        - Bar plot for histogram (positive/negative divergence).
+        """
         # MACD: add MACD line and signal line + histogram in row 2
         for df, label in zip(clean_dfs, labels):
             if "MACD" in df.columns and "MACD_signal" in df.columns and "MACD_hist" in df.columns:
@@ -161,6 +283,24 @@ def plot_close_prices(
 
 #========================================= Daily Returns =========================================#
     elif indicator_key == "dailyr":
+        """
+        Plot colored segments and hover tooltips showing daily returns.
+
+        Steps
+        -----
+        1. Compute Daily Return via `apply_indicator(df, "dailyr")`.
+        2. Color code:
+            - Green if positive
+            - Red if negative
+        3. Draw color-changing line segments (visual only).
+        4. Add an invisible overlay line for hover info with
+        stylized tooltips (white box, black border).
+        5. Optionally highlight Max Profit range (Buy → Sell window).
+
+        Output
+        ------
+        - The y-axis title is updated to "Close Price (colored by Daily Return)".
+        """
         for df, label in zip(clean_dfs, labels):
             # Apply the indicator
             df = apply_indicator(df, "dailyr", indicator_params)
@@ -270,9 +410,15 @@ def plot_close_prices(
 
         # Match other charts’ axis and hover feel
         fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
-#========================================= Daily Returns =========================================#
 
-
+#========================================= Update Layout =========================================#
+        """
+        Apply consistent layout settings:
+        - Plot height and margins
+        - Unified hover mode for all non-DailyR plots
+        - White background template
+        - Spike lines (vertical crosshair) on both axes
+        """
     # Layout tweaks
     fig.update_layout(
         height=700,
