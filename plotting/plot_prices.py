@@ -218,8 +218,8 @@ def plot_close_prices(
                     ),
                     hoverlabel=dict(
                         bgcolor="white",
-                        bordercolor="rgba(0,0,0,0.1)",
-                        font=dict(color="black", size=12, family="Arial"),
+                        bordercolor="rgba(0,0,0,0.7)",
+                        font=dict(color="black", size=14, family="Arial"),
                         align="left",
                         namelength=0,
                     ),

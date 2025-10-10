@@ -2,6 +2,81 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 
+<!-- === Dashboard Guide Panel === -->
+<div id="dashboardGuide" style="margin-bottom:30px; border:1px solid #ccc; border-radius:8px; padding:15px;">
+  <button type="button" id="toggleGuide"
+          style="background:#007bff;color:white;border:none;padding:8px 14px;border-radius:5px;cursor:pointer;">
+    ℹ️ Show Dashboard Guide
+  </button>
+
+  <div id="guideContent" style="display:none;margin-top:15px;">
+    <h2>📊 Dashboard Overview</h2>
+    <p>
+      This dashboard lets you <b>analyze and compare up to two stocks</b> using live or uploaded data.
+      You can apply <b>technical indicators</b>, choose <b>time ranges</b>, and view <b>sentiment-based news</b>.
+    </p>
+
+    <h3>🧩 1. Stock Inputs</h3>
+    <ul>
+      <li><b>Stock Ticker 1</b> — required (e.g. NVDA).</li>
+      <li><b>Ticker 2</b> — optional comparison (e.g. MSFT).</li>
+      <li><b>CSV Upload</b> — use your own dataset if you prefer offline analysis.</li>
+      <li>Use “Remove File” to clear an upload.</li>
+    </ul>
+
+    <h3>⏱ 2. Timeframe</h3>
+    <p>
+      Filter data to <b>1M, 3M, 6M, 1Y, or 2Y</b> views. The system automatically adjusts plots for both datasets.
+    </p>
+
+    <h3>📈 3. Indicator Options</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><th style="border-bottom:1px solid #ddd;">Indicator</th><th style="border-bottom:1px solid #ddd;">Purpose</th></tr>
+      <tr><td>Close Prices</td><td>Shows closing prices over time.</td></tr>
+      <tr><td>SMA</td><td>Simple Moving Average for trend direction.</td></tr>
+      <tr><td>EMA</td><td>Exponential Moving Average (more reactive).</td></tr>
+      <tr><td>RSI</td><td>Detects overbought/oversold conditions.</td></tr>
+      <tr><td>MACD</td><td>Momentum & signal line divergence.</td></tr>
+      <tr><td>Daily Returns</td><td>Percentage change between days.</td></tr>
+    </table>
+
+    <h3>⚙️ 4. Parameters</h3>
+    <p>Adjust indicator parameters (e.g. SMA period length). Defaults apply if no options appear.</p>
+
+    <h3>🧼 5. Preprocessing</h3>
+    <p>Enable “Show preprocessed data preview” to inspect cleaned and aligned data.</p>
+
+    <h3>💹 6. Analysis Results</h3>
+    <p>The graph visualizes selected indicators for one or both datasets.</p>
+
+    <h3>📰 7. News & Sentiment</h3>
+    <p>
+      Latest financial news fetched automatically for the last viewed ticker, with sentiment analysis via VADER.
+    </p>
+
+    <h3>🔁 8. Auto Refresh</h3>
+    <p>Use “Auto Refresh” to live-update stock prices every 30 seconds and refresh news every 3 minutes.</p>
+
+    <h3>💡 Tips</h3>
+    <ul>
+      <li>Ensure CSV columns include <code>Date</code> and <code>Close</code>.</li>
+      <li>Align both tickers’ time ranges for fair comparison.</li>
+      <li>Click indicators again to update graphs with new parameters.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+document.getElementById("toggleGuide").addEventListener("click", ()=>{
+  const c=document.getElementById("guideContent");
+  const b=document.getElementById("toggleGuide");
+  const show=c.style.display==="none";
+  c.style.display=show?"block":"none";
+  b.textContent=show?"❌ Hide Dashboard Guide":"ℹ️ Show Dashboard Guide";
+});
+</script>
+
+<!-- === Main Dashboard Form === -->
 <form method="POST" enctype="multipart/form-data">
   <label for="ticker1">Enter Stock Ticker 1:</label>
   <input type="text" name="ticker1" id="ticker1" placeholder="AAPL" value="{{ request.form.ticker1 or '' }}">
@@ -13,7 +88,6 @@
   <input type="file" name="file1" accept=".csv">
   <label>{% if labels %}{{ labels[0] }}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file1">Remove File 1</button>
-  <!-- Clear button for uploaded file 1 -->
 
   <p>Upload second CSV (optional):</p>
   <input type="file" name="file2" accept=".csv">
@@ -42,7 +116,6 @@
   {% if shown_indicator %}
     <div id="editable-params" style="margin-top:12px;">
       <h3>{{ shown_indicator|upper }} Parameters</h3>
-
       {% if params %}
         {% for key, value in params.items() %}
         <div class="param-field">
@@ -84,7 +157,6 @@
   <p style="color:red">{{ error }}</p>
 {% endif %}
 
-{# === Stock Summary Cards === #}
 {% if summaries %}
   <div class="stock-summary-container">
     {% for s in summaries %}
@@ -100,7 +172,8 @@
         </div>
         <div class="stock-right">
           {% if s.price %}
-            <h3>${{ "%.2f"|format(s.price) }}</h3>
+            <h3 class="stock-price" data-symbol="{{ s.symbol }}">${{ "%.2f"|format(s.price) }}</h3>
+            <small class="last-updated" data-symbol="{{ s.symbol }}" style="color:#888;">Last updated: —</small>
           {% endif %}
           {% if s.change %}
             <span class="change {% if s.change >= 0 %}pos{% else %}neg{% endif %}">
@@ -113,7 +186,6 @@
   </div>
 {% endif %}
 
-{# === Chart Section === #}
 {% if plot_div %}
   <div id="plot-area" style="margin-top:20px;">
     <h2>Analysis Results {% if shown_indicator %}- {{ shown_indicator|upper }}{% endif %}</h2>
@@ -128,12 +200,108 @@
   </div>
 {% endif %}
 
-{# === Preprocessed Data Preview === #}
 {% if preprocessed_html %}
   <h3 style="margin-top:30px;">🧩 Preprocessed Data Preview</h3>
   <div class="scroll-container">
     {{ preprocessed_html | safe }}
   </div>
 {% endif %}
+
+<!-- === Auto Refresh for the stock prices === -->
+<script>
+(function(){
+  const ticker = "{{ (labels and labels[-1]) or '' }}";
+  if (!ticker) return;
+
+  const plotArea = document.getElementById("plot-area");
+  const btn = document.createElement("button");
+  btn.id = "autoRefreshToggle";
+  btn.textContent = "Auto Refresh Off";
+  btn.style = "margin-top:10px;padding:6px 10px;";
+  if (plotArea) plotArea.appendChild(btn);
+
+  let isOn = false, priceInterval = null, newsInterval = null, lastPrice = null;
+
+  function updatePrice(){
+    fetch(`/auto_refresh?ticker=${ticker}`)
+      .then(r=>r.json())
+      .then(data=>{
+        if (!data || !data.price) return;
+        const el = document.querySelector(`.stock-price[data-symbol='${ticker}']`);
+        const ts = document.querySelector(`.last-updated[data-symbol='${ticker}']`);
+        if (!el) return;
+        const newPrice = Number(data.price);
+        el.textContent = `$${newPrice.toFixed(2)}`;
+        if (lastPrice !== null) {
+          const diff = newPrice - lastPrice;
+          el.style.transition = "color 0.5s";
+          el.style.color = diff > 0 ? "green" : diff < 0 ? "red" : "black";
+          setTimeout(()=> el.style.color = "black", 1500);
+        }
+        if (ts) ts.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        lastPrice = newPrice;
+      }).catch(()=>{});
+  }
+
+  async function loadNews(autoTriggered=false){
+    try {
+      const res = await fetch(`/get_news?ticker=${ticker}`);
+      const data = await res.json();
+      const container = document.getElementById("newsContainer");
+      if (!container) return;
+      container.innerHTML = "";
+      if (data.error){ container.innerHTML = `<p style="color:red;">${data.error}</p>`; return; }
+      if (!data.articles || data.articles.length===0){
+        container.innerHTML = `<p>No recent news found for ${ticker}.</p>`; return;
+      }
+      let avg=0;
+      data.articles.forEach(a=>{
+        const s=a.sentiment||0; avg+=s;
+        const c=s>0.2?"green":s<-0.2?"red":"#666";
+        container.innerHTML+=`
+        <div style="padding:8px 0;border-bottom:1px solid #ddd;">
+          <a href="${a.url}" target="_blank" style="font-weight:600;">${a.title}</a>
+          <div style="color:#888;font-size:0.9em;">
+            ${a.source||"Unknown"} • ${a.publishedAt?new Date(a.publishedAt).toLocaleString():""}
+          </div>
+          <div>${a.description||""}</div>
+          <div style="margin-top:4px;color:${c};">Sentiment: ${s.toFixed(2)}</div>
+        </div>`;
+      });
+      avg/=data.articles.length;
+      const mood = avg>0.2?"Positive":avg<-0.2?"Negative":"Neutral";
+      container.insertAdjacentHTML("afterbegin", `<p><b>Overall sentiment:</b> ${mood} ${autoTriggered ? "(auto-updated)" : ""}</p>`);
+    } catch(e){
+      console.error("News load error:", e);
+    }
+  }
+
+  btn.addEventListener("click", ()=>{
+    if (isOn){
+      clearInterval(priceInterval);
+      clearInterval(newsInterval);
+      btn.textContent = "Auto Refresh Off";
+    } else {
+      updatePrice();
+      loadNews(true);
+      priceInterval = setInterval(updatePrice, 30000);  // every 30s
+      newsInterval = setInterval(()=>loadNews(true), 180000);  // every 3 min
+      btn.textContent = "Auto Refresh On";
+    }
+    isOn = !isOn;
+  });
+
+  // load once on page load
+  loadNews();
+})();
+</script>
+
+<!-- === News Section === -->
+<div id="newsSection" style="margin-top:30px;">
+  <h3>📰 Latest News</h3>
+  <div id="newsContainer" style="margin-top:8px;">
+    <p style="color:#666;">No news loaded yet.</p>
+  </div>
+</div>
 
 {% endblock %}

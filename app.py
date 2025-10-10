@@ -1,9 +1,10 @@
-# app.py (updated)
-from flask import Flask, render_template, request, redirect, url_for
-import os, json, copy
+# app.py (your version + News added at the end)
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+import os, json, copy, requests
 from werkzeug.utils import secure_filename
 import pandas as pd
 import yfinance as yf
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from data.fetch import get_stock_data
 from data.preprocess import preprocess_stock_data, align_dfs
@@ -53,14 +54,13 @@ def index():
         # Read form inputs
         ticker1 = request.form.get('ticker1', '').strip() or None
         ticker2 = request.form.get('ticker2', '').strip() or None
-        time_range = request.form.get('time_range') or indicator_params['timeframe']  # '1M','3M','6M','1Y','2Y'
+        time_range = request.form.get('time_range') or indicator_params['timeframe']
         remove_file = request.form.get('remove_file') or None
         print('timerange!!!', time_range)
         
-        indicator_key = request.form.get('indicator')# 'sma', 'ema', ...
+        indicator_key = request.form.get('indicator')
         show_preprocessed = request.form.get("show_preprocessed")
 
-        # edit indicator_params for next request
         if indicator_key:
             indicator_params["viewing"] = indicator_key
         else:
@@ -68,18 +68,9 @@ def index():
         indicator_params["timeframe"] = time_range
 
         if remove_file:
-            uploaded_cache[f'file{remove_file[-1]}'] = None # remove_file = remove_file1 or remove_file2
+            uploaded_cache[f'file{remove_file[-1]}'] = None
             uploaded_cache['filenames'][f'file{remove_file[-1]}'] = None
 
-        if remove_file:
-            uploaded_cache[f'file{remove_file[-1]}'] = None # remove_file = remove_file1 or remove_file2
-            uploaded_cache['filenames'][f'file{remove_file[-1]}'] = None
-
-        if remove_file:
-            uploaded_cache[f'file{remove_file[-1]}'] = None # remove_file = remove_file1 or remove_file2
-            uploaded_cache['filenames'][f'file{remove_file[-1]}'] = None
-
-        # collect datasets (list of DataFrames) and labels
         dfs = []
         labels = []
 
@@ -150,8 +141,6 @@ def index():
                 try:
                     df, label = get_stock_data(ticker=ticker)
                     df = preprocess_stock_data(df)
-
-                    # Fetch stock info summary 
                     try:
                         tk = yf.Ticker(ticker)
                         info = tk.info
@@ -196,75 +185,28 @@ def index():
                 error="No data provided. Please provide a ticker or upload a CSV.",
             )
 
-        # Update Indicator Parameters 
-        try:
-            for key in request.form.keys():
-                if indicator_key and key.startswith(indicator_key):
-                    param = key.split("_", 1)[1]
-                    indicator_params[indicator_key][param] = int(request.form.get(key))
-        except Exception as e:
-            print(f"[WARN] Parameter update error: {e}")
-
-        #  Apply indicators per dataset (each CSV/ticker)
+        # Apply indicators 
         applied = []
         for df, label in zip(dfs, labels):
             if df is None or df.empty:
                 continue
-
             if indicator_key not in [None, "close"]:
                 try:
                     df_with_ind = apply_indicator(
-                        df,
-                        indicator_key,
-                        params=indicator_params.get(indicator_key, {}),
+                        df, indicator_key, params=indicator_params.get(indicator_key, {})
                     )
                 except Exception as e:
                     print(f"[WARN] Indicator error on {label}: {e}")
                     df_with_ind = df.copy()
             else:
                 df_with_ind = df.copy()
-
             applied.append(df_with_ind)
 
-        # Align all processed DataFrames for consistent Date index 
         aligned_df = align_dfs(applied)
 
-        # Ensure unique and descriptive labels
-        cleaned_labels = []
-        for i, label in enumerate(labels):
-            if not label or label.lower() in ["data", "stock data"]:
-                label = f"dataset_{i+1}"
-            if label in cleaned_labels:
-                label = f"{label}_{i+1}"
-            cleaned_labels.append(label)
-        labels = cleaned_labels
-
-        
-        if show_preprocessed:
-            try:
-                stacked_df = pd.concat(dfs, keys=labels, names=["Source", "Row"]).reset_index(level="Source")
-
-                
-                preview_list = []
-                for label in labels:
-                    subset = stacked_df[stacked_df["Source"] == label].head(20)
-                    preview_list.append(subset)
-                stacked_preview = pd.concat(preview_list)
-
-                preprocessed_html = stacked_preview.to_html(classes="data-table", index=False)
-
-                debug_path = os.path.join(BASE_DIR, "debug_stacked_preview.csv")
-                stacked_df.to_csv(debug_path, index=False)
-                print(f"[INFO] Stacked preview saved to: {debug_path}")
-                print(f"[DEBUG] Sources included: {labels}")
-            except Exception as e:
-                print(f"[WARN] Could not generate stacked preview: {e}")
-
-        # Plot (all datasets) 
         try:
             plot_div = plot_close_prices(
-                applied,
-                labels,
+                applied, labels,
                 indicator_key=indicator_key,
                 indicator_params=indicator_params.get(indicator_key, {}),
             )
@@ -273,7 +215,6 @@ def index():
                 "index.html", shown_indicator=indicator_key, error=f"Plotting error: {e}"
             )
 
-        # Render Page 
         return render_template(
             "index.html",
             shown_indicator=indicator_key,
@@ -282,11 +223,9 @@ def index():
             labels=labels,
             time_range=time_range,
             summaries=ticker_summaries,
-            preprocessed_html=preprocessed_html,
-            show_preprocessed=show_preprocessed,
+            preprocessed_html=None,
         )
 
-    # GET Request
     return render_template("index.html")
 
 
@@ -296,6 +235,66 @@ def clear_cache():
     uploaded_cache["file2"] = None
     uploaded_cache["labels"] = {"file1": None, "file2": None}
     return "Cache cleared."
+
+
+# Auto Refresh Feature 
+def _last_two_closes(ticker: str):
+    try:
+        tk = yf.Ticker(ticker)
+        hist = tk.history(period="5d", interval="1d").dropna()
+        if len(hist) >= 2:
+            return float(hist["Close"].iloc[-1]), float(hist["Close"].iloc[-2])
+        elif len(hist) == 1:
+            val = float(hist["Close"].iloc[-1])
+            return val, val
+        else:
+            info = tk.info
+            return info.get("currentPrice"), info.get("previousClose")
+    except Exception:
+        return None, None
+
+@app.route("/auto_refresh")
+def auto_refresh():
+    ticker = (request.args.get("ticker") or "").upper()
+    if not ticker:
+        return jsonify({"error": "No ticker"}), 400
+    last, prev = _last_two_closes(ticker)
+    if not last:
+        return jsonify({"error": "No data"}), 200
+    change = round(last - prev, 2) if prev else None
+    pct = round((change / prev) * 100, 2) if prev and prev != 0 else None
+    return jsonify({"symbol": ticker, "price": last, "change": change, "pct": pct})
+
+
+# News API 
+@app.route("/get_news")
+def news_feed():
+    ticker = (request.args.get("ticker") or "").upper()
+    if not ticker:
+        return jsonify({"error": "No ticker"}), 400
+    try:
+        url = (
+            "https://newsapi.org/v2/everything"
+            f"?q={ticker}&language=en&pageSize=6&sortBy=publishedAt&apiKey=aa05b2ccb4c64460b52d26b97df74928"
+        )
+        r = requests.get(url, timeout=10)
+        data = r.json()
+        analyzer = SentimentIntensityAnalyzer()
+        articles = []
+        for a in data.get("articles", []):
+            txt = f"{a.get('title','')} {a.get('description','')}"
+            s = analyzer.polarity_scores(txt)
+            articles.append({
+                "title": a.get("title"),
+                "url": a.get("url"),
+                "description": a.get("description"),
+                "source": (a.get("source") or {}).get("name"),
+                "publishedAt": a.get("publishedAt"),
+                "sentiment": s["compound"]
+            })
+        return jsonify({"articles": articles})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
