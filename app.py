@@ -1,7 +1,6 @@
 # app.py (your version + News added at the end)
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-import os, json, copy, requests
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, jsonify
+import os, copy, requests, timeit
 import pandas as pd
 import yfinance as yf
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -10,7 +9,7 @@ from data.fetch import get_stock_data
 from data.preprocess import preprocess_stock_data, align_dfs
 from indicators.registry import apply_indicator, get_indicator_keys, get_indicator_spec
 from plotting.plot_prices import plot_close_prices
-from utils.validation import allowed_file, validate_csv_columns
+from utils.upload_handler import upload_handling
 from utils.helpers import filter_dataframe
 
 app = Flask(__name__)
@@ -58,8 +57,7 @@ def index():
         ticker2 = request.form.get('ticker2', '').strip() or None
         time_range = request.form.get('time_range') or indicator_params['timeframe']
         remove_file = request.form.get('remove_file') or None
-        print('timerange!!!', time_range)
-        
+
         indicator_key = request.form.get('indicator')
         show_preprocessed = request.form.get("show_preprocessed")
 
@@ -76,33 +74,40 @@ def index():
         dfs, labels = [], []
 
         # Handle Uploaded CSVs 
-        for file_field in ["file1", "file2"]:
+        for file_field in ["file1", "file2"]:   
             uploaded = request.files.get(file_field)
             if uploaded and uploaded.filename:
-                filename = secure_filename(uploaded.filename)
-                if not allowed_file(filename):
+                save_path = os.path.join(UPLOAD_FOLDER, uploaded.filename)
+
+                try:
+                    df, label = upload_handling(uploaded, save_path)
+                except Exception as e:
                     return render_template(
                         "index.html",
                         shown_indicator=indicator_key,
-                        error=f"File not allowed: {filename}",
+                        error = e,
                     )
 
-                save_path = os.path.join(UPLOAD_FOLDER, filename)
-                uploaded.save(save_path)
+                # if not allowed_file(filename):
+                #     return render_template(
+                #         "index.html",
+                #         shown_indicator=indicator_key,
+                #         error=f"File not allowed: {filename}",
+                #     )
 
-                try:
-                    validate_csv_columns(save_path, required_cols=["Date", "Close"])
-                except Exception as e:
-                    return render_template(
-                        "index.html", shown_indicator=indicator_key, error=str(e)
-                    )
+                # try:
+                #     validate_csv_columns(save_path, required_cols=["Date", "Close"])
+                # except Exception as e:
+                #     return render_template(
+                #         "index.html", shown_indicator=indicator_key, error=str(e)
+                #     )
 
-                df, label = get_stock_data(filepath=save_path)
-                if not label or label.lower() in ["data", "stock data"]:
-                    label = os.path.splitext(filename)[0]
+                # df, label = get_stock_data(filepath=save_path)
+                # if not label or label.lower() in ["data", "stock data"]:
+                #     label = os.path.splitext(filename)[0]
 
-                df["Date"] = pd.to_datetime(df["Date"], errors="coerce", utc=True)
-                df = df.sort_values("Date").reset_index(drop=True)
+                # df["Date"] = pd.to_datetime(df["Date"], errors="coerce", utc=True)
+                # df = df.sort_values("Date").reset_index(drop=True)
                 df = preprocess_stock_data(df)
 
                 uploaded_cache[file_field] = df
