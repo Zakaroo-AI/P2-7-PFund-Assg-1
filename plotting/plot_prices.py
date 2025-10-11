@@ -291,26 +291,24 @@ def plot_close_prices(
 
         Steps
         -----
-        1. Compute Daily Return via `apply_indicator(df, "dailyr")`.
-        2. Color code:
+        1. Color code:
             - Green if positive
             - Red if negative
-        3. Draw color-changing line segments (visual only).
-        4. Add an invisible overlay line for hover info with
+        2. Draw color-changing line segments (visual only).
+        3. Add an invisible overlay line for hover info with
         stylized tooltips (white box, black border).
-        5. Optionally highlight Max Profit range (Buy → Sell window).
+        4. Optionally highlight Max Profit range (Buy → Sell window).
 
         Output
         ------
         - The y-axis title is updated to "Close Price (colored by Daily Return)".
         """
         for df, label in zip(clean_dfs, labels):
-            # Apply the indicator
-            df = apply_indicator(df, "dailyr", indicator_params)
-            if "DailyR" not in df.columns:
-                continue
-
             # --- Color coding ---
+            if "DailyR" not in df.columns:
+                print("Daily Returns cannot be found.")
+                continue
+            
             df["Color"] = df["DailyR"].apply(lambda x: "green" if x >= 0 else "red")
 
             # --- Build color-changing segments (visual only, no hover) ---
@@ -450,188 +448,13 @@ def plot_close_prices(
     # Add a small post_script that inserts a control panel of checkboxes before the plot.
     # It uses the '{plot_id}' placeholder which plotly.io.to_html replaces with the generated div id.
    
-    post_script = r"""
-    (function() {
-    var gd = document.getElementById('{plot_id}');
-    if (!gd) return;
-
-    var MAX_CHECKBOXES = 40; // threshold to switch to grouped UI for large plots
-
-    // Save original shapes & annotations for Max Profit toggle
-    try {
-        gd._orig_shapes = gd.layout && gd.layout.shapes ? JSON.parse(JSON.stringify(gd.layout.shapes)) : [];
-        gd._orig_annos  = gd.layout && gd.layout.annotations ? JSON.parse(JSON.stringify(gd.layout.annotations)) : [];
-    } catch (e) {
-        gd._orig_shapes = [];
-        gd._orig_annos  = [];
-    }
-
-    // Helper to create a styled wrapper for controls
-    var ctrl = document.createElement('div');
-    ctrl.id = '{plot_id}-controls';
-    ctrl.style.margin = '8px 0';
-    ctrl.style.fontFamily = 'Arial, sans-serif';
-    ctrl.style.fontSize = '13px';
-
-    // toggleable entries: {id, checkbox, indices}
-    var toggleables = [];
-
-    // Select all / Clear all buttons
-    var btnAll = document.createElement('button');
-    btnAll.textContent = 'Select all';
-    btnAll.style.marginRight = '8px';
-    btnAll.onclick = function(e) {
-        e.preventDefault();
-        toggleables.forEach(function(entry) {
-        Plotly.restyle(gd, {'visible': true}, entry.indices);
-        entry.checkbox.checked = true;
-        });
-    };
-    var btnNone = document.createElement('button');
-    btnNone.textContent = 'Clear all';
-    btnNone.style.marginRight = '12px';
-    btnNone.onclick = function(e) {
-        e.preventDefault();
-        toggleables.forEach(function(entry) {
-        // use 'legendonly' so traces are hidden but legend remains consistent
-        Plotly.restyle(gd, {'visible': 'legendonly'}, entry.indices);
-        entry.checkbox.checked = false;
-        });
-    };
-
-    ctrl.appendChild(btnAll);
-    ctrl.appendChild(btnNone);
-
-    // helper to create a checkbox + label
-    function mkCheckbox(id, label, checked, onchange) {
-        var wrap = document.createElement('label');
-        wrap.style.marginRight = '12px';
-        wrap.style.display = 'inline-flex';
-        wrap.style.alignItems = 'center';
-
-        var cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.id = id;
-        cb.checked = checked;
-        cb.style.marginRight = '6px';
-        cb.addEventListener('change', onchange);
-
-        var txt = document.createTextNode(label);
-        wrap.appendChild(cb);
-        wrap.appendChild(txt);
-        return {wrap: wrap, checkbox: cb};
-    }
-
-    // Build groups from meta.component if present; otherwise fall back to name-based grouping
-    var groups = {}; // key -> {indices: [], sampleName: string}
-    for (var i = 0; i < gd.data.length; i++) {
-        var tr = gd.data[i];
-        var key = (tr && tr.meta && tr.meta.component) ? tr.meta.component : null;
-        if (!key) {
-        // try a conservative name-based heuristic for legacy plots
-        if (tr && typeof tr.name === 'string' && /daily\s*return/i.test(tr.name)) {
-            key = 'dailyr_unknown';
-        } else {
-            key = 'trace_by_index';
-        }
-        }
-        if (!groups[key]) groups[key] = {indices: [], sampleName: (tr && tr.name) || null};
-        groups[key].indices.push(i);
-    }
-
-    // Decide how to render controls:
-    // - If 'segments' group exists and it's large, create a single grouped toggle for it.
-    // - For other small groups or small total trace counts, create per-trace checkboxes.
-    var totalTraces = gd.data.length;
-
-    // If we have an explicit 'segments' group in meta, prefer grouped control
-    if (groups['segments']) {
-        var segIndices = groups['segments'].indices;
-        var segLabel = 'Segments (' + segIndices.length + ')';
-        var segDefaultChecked = (gd.data[segIndices[0]].visible !== 'legendonly' && gd.data[segIndices[0]].visible !== false);
-        var segEntry = mkCheckbox('{plot_id}-segments', segLabel, segDefaultChecked, function() {
-        var vis = this.checked ? true : false;
-        Plotly.restyle(gd, {'visible': vis}, segIndices);
-        });
-        ctrl.appendChild(segEntry.wrap);
-        toggleables.push({id: '{plot_id}-segments', checkbox: segEntry.checkbox, indices: segIndices});
-    }
-
-    // If a hover group exists, add an explicit hover toggle (usually small)
-    if (groups['hover']) {
-        var hovIdx = groups['hover'].indices;
-        var hovDefaultChecked = (gd.data[hovIdx[0]].visible !== 'legendonly' && gd.data[hovIdx[0]].visible !== false);
-        var hovEntry = mkCheckbox('{plot_id}-hover', 'Hover overlay', hovDefaultChecked, function() {
-        var vis = this.checked ? true : false;
-        Plotly.restyle(gd, {'visible': vis}, hovIdx);
-        });
-        ctrl.appendChild(hovEntry.wrap);
-        toggleables.push({id: '{plot_id}-hover', checkbox: hovEntry.checkbox, indices: hovIdx});
-    }
-
-    // Add grouped toggles for any other groups that have many members,
-    // and optionally per-trace checkboxes for small numbers.
-    Object.keys(groups).forEach(function(k) {
-        if (k === 'segments' || k === 'hover') return; // already handled
-        var idxs = groups[k].indices;
-        if (idxs.length === 0) return;
-        if (idxs.length === 1 && totalTraces <= MAX_CHECKBOXES) {
-        // small plot: create per-trace checkbox like the original behavior
-        var i = idxs[0];
-        var tr = gd.data[i];
-        var name = tr && tr.name ? tr.name : 'trace ' + i;
-        var defaultChecked = (tr.visible !== 'legendonly' && tr.visible !== false);
-        var entry = mkCheckbox('{plot_id}-cb-' + i, name, defaultChecked, function() {
-            var vis = this.checked ? true : 'legendonly';
-            Plotly.restyle(gd, {'visible': vis}, [i]);
-        });
-        ctrl.appendChild(entry.wrap);
-        toggleables.push({id: '{plot_id}-cb-' + i, checkbox: entry.checkbox, indices: [i]});
-        } else if (idxs.length <= 6 && totalTraces <= MAX_CHECKBOXES) {
-        // moderate group & small overall plot: per-trace checkboxes
-        idxs.forEach(function(i) {
-            var tr = gd.data[i];
-            var name = tr && tr.name ? tr.name : 'trace ' + i;
-            var defaultChecked = (tr.visible !== 'legendonly' && tr.visible !== false);
-            var entry = mkCheckbox('{plot_id}-cb-' + i, name, defaultChecked, function() {
-            var vis = this.checked ? true : 'legendonly';
-            Plotly.restyle(gd, {'visible': vis}, [i]);
-            });
-            ctrl.appendChild(entry.wrap);
-            toggleables.push({id: '{plot_id}-cb-' + i, checkbox: entry.checkbox, indices: [i]});
-        });
-        } else {
-        // large group: add a grouped toggle that toggles all indices at once
-        var label = (groups[k].sampleName ? groups[k].sampleName : k) + ' (' + idxs.length + ')';
-        var defaultChecked = (gd.data[idxs[0]].visible !== 'legendonly' && gd.data[idxs[0]].visible !== false);
-        var gEntry = mkCheckbox('{plot_id}-group-' + k, label, defaultChecked, function() {
-            var vis = this.checked ? true : false;
-            Plotly.restyle(gd, {'visible': vis}, idxs);
-        });
-        ctrl.appendChild(gEntry.wrap);
-        toggleables.push({id: '{plot_id}-group-' + k, checkbox: gEntry.checkbox, indices: idxs});
-        }
-    });
-
-    // Max Profit toggle (shapes + annotations) - always show if there were shapes/annos
-    var hasShapes = (gd._orig_shapes && gd._orig_shapes.length > 0) || (gd._orig_annos && gd._orig_annos.length > 0);
-    if (hasShapes) {
-        var maxDefault = true;
-        var maxEntry = mkCheckbox('{plot_id}-maxprofit', 'Max Profit', maxDefault, function() {
-        if (this.checked) {
-            Plotly.relayout(gd, {shapes: gd._orig_shapes, annotations: gd._orig_annos});
-        } else {
-            Plotly.relayout(gd, {shapes: [], annotations: []});
-        }
-        });
-        ctrl.appendChild(maxEntry.wrap);
-    }
-
-    // insert the controls before the plot container
-    gd.parentNode.insertBefore(ctrl, gd);
-    })();
+    post_script = f"""
+    document.addEventListener("DOMContentLoaded", function() {{
+        if (typeof setupPlotControls === "function") {{
+            setupPlotControls("{'{plot_id}'}");
+        }}
+    }});
     """
-
 
     # Return HTML fragment; post_script will be injected with the correct plot div id.
     # include_plotlyjs="cdn" keeps the same behaviour as before (loads plotly from CDN)
