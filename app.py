@@ -21,11 +21,13 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Cache for uploaded files
 uploaded_cache = {
-    "file1": None,
-    "file2": None,
-    "labels": {"file1": None, "file2": None},
-    "filenames": {"file1": None, "file2": None},
+    "file1": None,  # the uploaded file itself
+    "file2": None,  
+    "labels": {"file1": None, "file2": None},    # the label attached to the data
+    "filenames": {"file1": None, "file2": None}, # the corresponding filename
 }
+
+ticker_cache = {}   #  ticker symbol: dataframe 
 
 # Indicator parameter tracking
 indicator_params = {"viewing": None, "timeframe": None}
@@ -71,8 +73,7 @@ def index():
             uploaded_cache[f'file{remove_file[-1]}'] = None
             uploaded_cache['filenames'][f'file{remove_file[-1]}'] = None
 
-        dfs = []
-        labels = []
+        dfs, labels = [], []
 
         # Handle Uploaded CSVs 
         for file_field in ["file1", "file2"]:
@@ -139,8 +140,15 @@ def index():
         for ticker in [ticker1, ticker2]:
             if ticker:
                 try:
-                    df, label = get_stock_data(ticker=ticker)
-                    df = preprocess_stock_data(df)
+                    if ticker in ticker_cache.keys():
+                        print(f'zkdebug: retrieving ticker {ticker} from ticker_cache')
+                        df, label = ticker_cache[ticker], ticker
+                    else:
+                        print(f'zkdebug: query ticker {ticker} from yfinance api')
+                        df, label = get_stock_data(ticker=ticker)
+                        df = preprocess_stock_data(df)
+                        ticker_cache[ticker] = df
+
                     try:
                         tk = yf.Ticker(ticker)
                         info = tk.info
