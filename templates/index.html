@@ -85,12 +85,12 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
   <input type="text" name="ticker2" id="ticker2" placeholder="MSFT" value="{{ request.form.ticker2 or '' }}">
 
   <p>Upload CSV (optional):</p>
-  <input type="file" name="file1" accept=".csv">
+  <input type="file" name="file1" accept=".csv, .xlsx, .json">
   <label>{% if labels %}{{ labels[0] }}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file1">Remove File 1</button>
 
   <p>Upload second CSV (optional):</p>
-  <input type="file" name="file2" accept=".csv">
+  <input type="file" name="file2" accept=".csv, .xlsx, .json">
   <label>{% if labels %}{{ labels[1] }}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file2">Remove File 2</button>
 
