@@ -3,7 +3,6 @@ from typing import List
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
-from indicators.registry import apply_indicator
 from plotly.subplots import make_subplots
 
 #========================================= Presets =========================================#

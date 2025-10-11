@@ -21,7 +21,7 @@ def calculate_dailyr(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.copy()
     df["DailyR"] = df["Close"].pct_change() * 100
-    df["DailyR"].replace([np.inf, -np.inf], np.nan, inplace=True)
+    df["DailyR"] = df["DailyR"].replace([np.inf, -np.inf], np.nan)
 
     # --- 💰 Max Profit (single trade) ---
     try:
