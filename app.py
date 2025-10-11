@@ -51,6 +51,10 @@ def index():
     if request.method == "POST":
         print("REQUEST METHOD:", request.method)
         print("FORM keys:", list(request.form.keys()))
+        try:
+            print("FORM keys:", request.form['ema_interval']) 
+        except:
+            print('fail')
 
         # Read form inputs
         ticker1 = request.form.get('ticker1', '').strip() or None
@@ -88,26 +92,6 @@ def index():
                         error = e,
                     )
 
-                # if not allowed_file(filename):
-                #     return render_template(
-                #         "index.html",
-                #         shown_indicator=indicator_key,
-                #         error=f"File not allowed: {filename}",
-                #     )
-
-                # try:
-                #     validate_csv_columns(save_path, required_cols=["Date", "Close"])
-                # except Exception as e:
-                #     return render_template(
-                #         "index.html", shown_indicator=indicator_key, error=str(e)
-                #     )
-
-                # df, label = get_stock_data(filepath=save_path)
-                # if not label or label.lower() in ["data", "stock data"]:
-                #     label = os.path.splitext(filename)[0]
-
-                # df["Date"] = pd.to_datetime(df["Date"], errors="coerce", utc=True)
-                # df = df.sort_values("Date").reset_index(drop=True)
                 df = preprocess_stock_data(df)
 
                 uploaded_cache[file_field] = df
@@ -198,6 +182,15 @@ def index():
                 error="No data provided. Please provide a ticker or upload a CSV.",
             )
 
+        # Update parameters with user's inputs
+        for key in request.form.keys():
+            # all parameters in request.form start with indicator_
+            if key.startswith(indicator_key):
+                # extract only the parameter name (some parameters have _ in their name)
+                param = key.split('_', 1)[1]
+                # all parameters have to be integer
+                indicator_params[indicator_key][param] = int(request.form.get(key))
+
         # Apply indicators 
         applied = []
         for df, label in zip(dfs, labels):
@@ -216,6 +209,7 @@ def index():
             applied.append(df_with_ind)
 
         aligned_df = align_dfs(applied)
+        print(indicator_params)
 
         try:
             plot_div = plot_close_prices(

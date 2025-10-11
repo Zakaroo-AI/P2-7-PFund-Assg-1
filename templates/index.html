@@ -78,6 +78,9 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
 
 <!-- === Main Dashboard Form === -->
 <form method="POST" enctype="multipart/form-data">
+  <input type="hidden" name="time_range" id="time_range_input" value="{{ time_range or '1Y' }}">
+  <input type="hidden" name="indicator" id="indicator_input" value="{{ shown_indicator or indicator or 'close' }}">
+
   <label for="ticker1">Enter Stock Ticker 1:</label>
   <input type="text" name="ticker1" id="ticker1" placeholder="AAPL" value="{{ request.form.ticker1 or '' }}">
 
@@ -96,22 +99,24 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
 
   <p>Select timeframe:</p>
   <div class="tabs" style="margin-top: 12px;">
-    <button type="submit" name="time_range" value="1M" class="tab {% if time_range=='1M' %}active{% endif %}">1 Month</button>
-    <button type="submit" name="time_range" value="3M" class="tab {% if time_range=='3M' %}active{% endif %}">3 Months</button>
-    <button type="submit" name="time_range" value="6M" class="tab {% if time_range=='6M' %}active{% endif %}">6 Months</button>
-    <button type="submit" name="time_range" value="1Y" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}">1 Year</button>
-    <button type="submit" name="time_range" value="2Y" class="tab {% if time_range=='2Y' %}active{% endif %}">2 Years</button>
+    <button type="button" class="tab {% if time_range=='1M' %}active{% endif %}" data-value="1M">1 Month</button>
+    <button type="button" class="tab {% if time_range=='3M' %}active{% endif %}" data-value="3M">3 Months</button>
+    <button type="button" class="tab {% if time_range=='6M' %}active{% endif %}" data-value="6M">6 Months</button>
+    <button type="button" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}" data-value="1Y">1 Year</button>
+    <button type="button" class="tab {% if time_range=='2Y' %}active{% endif %}" data-value="2Y">2 Years</button>
   </div>
+
 
   <p>Select indicator:</p>
   <div class="tabs" style="margin-top: 12px;">
-    <button type="submit" name="indicator" value="close" class="tab">Close Prices</button>
-    <button type="submit" name="indicator" value="sma" class="tab">SMA</button>
-    <button type="submit" name="indicator" value="ema" class="tab">EMA</button>
-    <button type="submit" name="indicator" value="rsi" class="tab">RSI</button>
-    <button type="submit" name="indicator" value="macd" class="tab">MACD</button>
-    <button type="submit" name="indicator" value="dailyr" class="tab">Daily Returns</button>
+    <button type="button" class="tab {% if shown_indicator=='close' or not shown_indicator %}active{% endif %}" data-value="close">Close Prices</button>
+    <button type="button" class="tab {% if shown_indicator=='sma' %}active{% endif %}" data-value="sma">SMA</button>
+    <button type="button" class="tab {% if shown_indicator=='ema' %}active{% endif %}" data-value="ema">EMA</button>
+    <button type="button" class="tab {% if shown_indicator=='rsi' %}active{% endif %}" data-value="rsi">RSI</button>
+    <button type="button" class="tab {% if shown_indicator=='macd' %}active{% endif %}" data-value="macd">MACD</button>
+    <button type="button" class="tab {% if shown_indicator=='dailyr' %}active{% endif %}" data-value="dailyr">Daily Returns</button>
   </div>
+
 
   {% if shown_indicator %}
     <div id="editable-params" style="margin-top:12px;">
@@ -138,11 +143,11 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
         <p>No parameter metadata for this indicator — defaults will be used.</p>
       {% endif %}
     </div>
-
-    <div style="margin-top:8px;">
-      <button type="submit" name="apply" value="1">Update Parameters</button>
-    </div>
   {% endif %}
+
+  <div style="margin-top:8px;">
+    <button type="submit" name="apply" value="1">Update Parameters</button>
+  </div>
 
   <div style="margin-top: 15px;">
     <label>
