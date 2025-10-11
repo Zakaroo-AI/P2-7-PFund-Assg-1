@@ -372,7 +372,7 @@ def plot_close_prices(
             )
 
             # --- 💰 Max Profit annotation ---
-            if not pd.isna(df["Buy_Date"].iloc[-1]) and not pd.isna(df["Sell_Date"].iloc[-1]):
+            try:
                 buy_date = df["Buy_Date"].iloc[-1]
                 sell_date = df["Sell_Date"].iloc[-1]
                 buy_price = df["Buy_Price"].iloc[-1]
@@ -380,35 +380,38 @@ def plot_close_prices(
                 price_diff = df["Price_Diff"].iloc[-1]
                 profit_pct = df["Max_Profit_Pct"].iloc[-1]
 
-                fig.add_shape(
-                    type="rect",
-                    x0=buy_date,
-                    x1=sell_date,
-                    y0=buy_price,
-                    y1=sell_price,
-                    line=dict(color="green", dash="dot"),
-                    fillcolor="rgba(0,255,0,0.08)",
-                    layer="below",
-                )
+                if pd.notna(buy_date) and pd.notna(sell_date) and buy_date != sell_date:
+                    fig.add_shape(
+                        type="rect",
+                        x0=buy_date,
+                        x1=sell_date,
+                        y0=buy_price,
+                        y1=sell_price,
+                        line=dict(color="green", dash="dot"),
+                        fillcolor="rgba(0,255,0,0.08)",
+                        layer="below",
+                    )
 
-                fig.add_annotation(
-                    x=sell_date,
-                    y=sell_price,
-                    text=(
-                        f"💰 <b>Max Profit</b><br>"
-                        f"Buy: {buy_date.date()} @ ${buy_price:.2f}<br>"
-                        f"Sell: {sell_date.date()} @ ${sell_price:.2f}<br>"
-                        f"Gain: <b>{profit_pct:.2f}% (${price_diff:.2f})</b>"
-                    ),
-                    showarrow=True,
-                    arrowhead=2,
-                    ax=0,
-                    ay=-60,
-                    bgcolor="rgba(255,255,255,0.9)",
-                    bordercolor="green",
-                    borderwidth=1,
-                    font=dict(color="green", size=12),
-                )
+                    fig.add_annotation(
+                        x=sell_date,
+                        y=sell_price,
+                        text=(
+                            f"💰 <b>Max Profit</b><br>"
+                            f"Buy: {pd.to_datetime(buy_date).date()} @ ${buy_price:.2f}<br>"
+                            f"Sell: {pd.to_datetime(sell_date).date()} @ ${sell_price:.2f}<br>"
+                            f"Gain: <b>{profit_pct:.2f}% (${price_diff:.2f})</b>"
+                        ),
+                        showarrow=True,
+                        arrowhead=2,
+                        ax=0,
+                        ay=-60,
+                        bgcolor="rgba(255,255,255,0.9)",
+                        bordercolor="green",
+                        borderwidth=1,
+                        font=dict(color="green", size=12),
+                    )
+            except Exception:
+                print("Error, max profit not found!")
 
         # Match other charts’ axis and hover feel
         fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
