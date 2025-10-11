@@ -9,7 +9,7 @@ from .dailyr import calculate_dailyr
 INDICATORS = {
     "sma": {
         "func": calculate_sma,
-        "default_params": {"window": 20},
+        "default_params": {"window": 5},
         # columns function receives merged params and returns list of expected columns
         "columns": lambda p: [f"SMA_{p.get('window', 20)}"],
         "plot_kind": "overlay",  # overlay on price
@@ -70,4 +70,8 @@ def apply_indicator(df, key: str, params: dict | None = None):
         return df.copy()
 
     # otherwise call the indicator function with merged params
-    return spec["func"](df.copy(), **merged_params)
+    try:
+        res = spec["func"](df.copy(), **merged_params)
+    except Exception as e:
+        print(f'{key} function failure: {e}')
+    return res

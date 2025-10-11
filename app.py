@@ -51,10 +51,6 @@ def index():
     if request.method == "POST":
         print("REQUEST METHOD:", request.method)
         print("FORM keys:", list(request.form.keys()))
-        try:
-            print("FORM keys:", request.form['ema_interval']) 
-        except:
-            print('fail')
 
         # Read form inputs
         ticker1 = request.form.get('ticker1', '').strip() or None
@@ -217,6 +213,7 @@ def index():
                 indicator_key=indicator_key,
                 indicator_params=indicator_params.get(indicator_key, {}),
             )
+            print('zkdebug 3', indicator_params.get(indicator_key, {}))
         except Exception as e:
             return render_template(
                 "index.html", shown_indicator=indicator_key, error=f"Plotting error: {e}"
@@ -234,15 +231,6 @@ def index():
         )
 
     return render_template("index.html")
-
-
-@app.route("/clear_cache")
-def clear_cache():
-    uploaded_cache["file1"] = None
-    uploaded_cache["file2"] = None
-    uploaded_cache["labels"] = {"file1": None, "file2": None}
-    return "Cache cleared."
-
 
 # Auto Refresh Feature 
 def _last_two_closes(ticker: str):
