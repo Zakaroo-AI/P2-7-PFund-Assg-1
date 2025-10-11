@@ -3,38 +3,59 @@ import numpy as np
 
 def calculate_dailyr(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calculates the daily percentage returns from the 'Close' price.
+    Calculate daily percentage returns and the maximum achievable profit window.
 
-    Args:
-        df (pd.DataFrame): DataFrame containing at least a 'Close' column.
-
-    Returns:
-        pd.DataFrame: Original DataFrame with an added 'DailyR' column (in percent).
+    Adds the following columns:
+    ----------------------------
+    - DailyR          : Daily return in percent (%)
+    - Buy_Date        : Optimal buy date for max profit
+    - Sell_Date       : Optimal sell date for max profit
+    - Buy_Price       : Buy price at Buy_Date
+    - Sell_Price      : Sell price at Sell_Date
+    - Price_Diff      : Absolute profit in dollars ($)
+    - Max_Profit_Pct  : Profit percentage relative to buy price (%)
     """
 
     if "Close" not in df.columns:
         raise ValueError("DataFrame must contain a 'Close' column.")
 
-    # Create a copy to avoid modifying the original DataFrame
     df = df.copy()
-
-    # Compute percentage change
     df["DailyR"] = df["Close"].pct_change() * 100
+    df["DailyR"].replace([np.inf, -np.inf], np.nan, inplace=True)
 
-    # Handle any NaN values (first row will always be NaN)
-    df["DailyR"] = df["DailyR"].replace([np.inf, -np.inf], np.nan)
-
-    # --- 💰 Max Profit logic ---
+    # --- 💰 Max Profit (single trade) ---
     try:
-        min_idx = df["Close"].idxmin()
-        max_idx_after_min = df["Close"].iloc[min_idx:].idxmax()
+        prices = df["Close"].values
+        dates = df["Date"].values
 
-        df["Buy_Date"] = df.loc[min_idx, "Date"]
-        df["Sell_Date"] = df.loc[max_idx_after_min, "Date"]
-        df["Buy_Price"] = df.loc[min_idx, "Close"]
-        df["Sell_Price"] = df.loc[max_idx_after_min, "Close"]
-        df["Price_Diff"] = df["Sell_Price"] - df["Buy_Price"]
-        df["Max_Profit_Pct"] = ((df["Sell_Price"] - df["Buy_Price"]) / df["Buy_Price"]) * 100
+        if len(prices) < 2:
+            raise ValueError("Not enough data to compute max profit.")
+
+        min_price = prices[0]
+        min_date = dates[0]
+        max_profit = 0
+        buy_date = sell_date = min_date
+        buy_price = sell_price = min_price
+
+        for i in range(1, len(prices)):
+            profit = prices[i] - min_price
+            if profit > max_profit:
+                max_profit = profit
+                buy_date = min_date
+                sell_date = dates[i]
+                buy_price = min_price
+                sell_price = prices[i]
+            if prices[i] < min_price:
+                min_price = prices[i]
+                min_date = dates[i]
+
+        df["Buy_Date"] = buy_date
+        df["Sell_Date"] = sell_date
+        df["Buy_Price"] = buy_price
+        df["Sell_Price"] = sell_price
+        df["Price_Diff"] = max_profit
+        df["Max_Profit_Pct"] = (max_profit / buy_price * 100) if buy_price > 0 else 0
+
     except Exception:
         df["Buy_Date"] = pd.NaT
         df["Sell_Date"] = pd.NaT
