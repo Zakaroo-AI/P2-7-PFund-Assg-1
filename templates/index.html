@@ -19,7 +19,7 @@
     <ul>
       <li><b>Stock Ticker 1</b> — required (e.g. NVDA).</li>
       <li><b>Ticker 2</b> — optional comparison (e.g. MSFT).</li>
-      <li><b>CSV Upload</b> — use your own dataset for offline analysis.</li>
+      <li><b>CSV / XLSX / JSON Upload</b> — use your own dataset for offline analysis.</li>
       <li>Use “Remove File” to clear an upload.</li>
     </ul>
     <h3>⏱ 2. Timeframe</h3>
@@ -67,10 +67,21 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
 .tab:hover { background: #eaeaea; }
 .tab.active-time { background: #007bff; color: white; transform: scale(1.05); }
 .tab.active-ind { background: #28a745; color: white; transform: scale(1.05); }
+
+/* === Error box styling === */
+.error-box {
+  background: #ffe6e6;
+  border: 1px solid #ff4d4d;
+  color: #b30000;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 15px;
+  font-weight: 500;
+}
 </style>
 
 <!-- === Main Dashboard Form === -->
-<form method="POST" enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data" id="analysisForm">
   <input type="hidden" name="time_range" id="time_range_input" value="{{ time_range or '1Y' }}">
   <input type="hidden" name="indicator" id="indicator_input" value="{{ shown_indicator or indicator or 'close' }}">
 
@@ -79,12 +90,12 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
   <label for="ticker2">Enter Ticker 2 (optional):</label>
   <input type="text" name="ticker2" id="ticker2" placeholder="MSFT" value="{{request.form.ticker2 or ''}}">
 
-  <p>Upload CSV (optional):</p>
+  <p>Upload CSV/XLSX/JSON (optional):</p>
   <input type="file" name="file1" accept=".csv,.xlsx,.json">
   <label>{% if labels %}{{labels[0]}}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file1">Remove File 1</button>
 
-  <p>Upload second CSV (optional):</p>
+  <p>Upload second file (optional):</p>
   <input type="file" name="file2" accept=".csv,.xlsx,.json">
   <label>{% if labels %}{{labels[1]}}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file2">Remove File 2</button>
@@ -116,7 +127,7 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
         <div class="param-field">
           <label for="{{ key }}">{{ key }}:</label>
           {% if value is number %}
-            <input type="number" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
+            <input type="number" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input" min="1" step="1">
           {% elif value is string %}
             <input type="text" id="{{shown_indicator}}_{{ key }}" name="{{shown_indicator}}_{{ key }}" value="{{ value }}" class="param-input">
           {% elif value is boolean %}
@@ -134,7 +145,6 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
       {% endif %}
     </div>
 
-  <!-- Update + Clear Buttons -->
   <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-start;">
     <button id="clearSessionBtn" type="button"
             style="flex:1;max-width:160px;background:#dc3545;color:white;border:none;
@@ -144,8 +154,8 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
   </div>
   {% endif %}
 
-  <!-- Manual Run -->
-  <div style="margin-top:12px;">
+  <!-- Submit/Update Section -->
+  <div id="submitSection" style="margin-top:12px;">
     <button id="runAnalysisBtn" type="submit"
             style="background:#28a745;color:white;border:none;padding:16px 22px;
                    border-radius:5px;cursor:pointer;font-size:0.95em;">
@@ -159,7 +169,11 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
   </div>
 </form>
 
-{% if error %}<p style="color:red">{{error}}</p>{% endif %}
+{% if error %}
+<div class="error-box">
+  ⚠️ <b>Error:</b> {{ error }}
+</div>
+{% endif %}
 
 {% if summaries %}
 <div class="stock-summary-container">
@@ -193,104 +207,45 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
 </div>
 {% endif %}
 
-{% if streak_info and shown_indicator == 'dailyr' %}
-<div class="card mt-4 p-3">
-  <h4 class="mb-3">Streak Summary</h4>
-    <div class="row">
-      <div class="col-md-6">
-        <h5 class="text-success">Max Upward Streak</h5>
-        {% if streak_info.up_streak %}
-          <p><strong>Start Date:</strong> {{ streak_info.up_start }}</p>
-          <p><strong>End Date:</strong> {{ streak_info.up_end }}</p>
-          <p><strong>Length:</strong> {{ streak_info.up_streak }} trading days</p>
-        {% else %}
-          <p>No upward streaks found.</p>
-        {% endif %}
-      </div>
-
-      <div class="col-md-6">
-        <h5 class="text-success">Max Downward Streak</h5>
-        {% if streak_info.down_streak %}
-          <p><strong>Start Date:</strong> {{ streak_info.down_start }}</p>
-          <p><strong>End Date:</strong> {{ streak_info.down_end }}</p>
-          <p><strong>Length:</strong> {{ streak_info.down_streak }} trading days</p>
-        {% else %}
-          <p>No upward streaks found.</p>
-        {% endif %}
-      </div>
-    </div>
-  {% else %}
-    <p>No data to display yet.</p>
-</div>
-{% endif %}
-
-
 {% if preprocessed_html %}
 <h3 style="margin-top:30px;">🧩 Preprocessed Data Preview</h3>
 <div class="scroll-container">{{preprocessed_html|safe}}</div>
 {% endif %}
 
-<!-- === Selection (local only) === -->
+<!-- === Dynamic Submit → Update Behavior === -->
 <script>
 (function(){
-  const form=document.querySelector("form");
-  const timeBtns=document.querySelectorAll("button[name='time_range']");
-  const indBtns=document.querySelectorAll("button[name='indicator']");
-  const timeInput=document.createElement("input");
-  timeInput.type="hidden";timeInput.name="time_range";form.appendChild(timeInput);
-  const indInput=document.createElement("input");
-  indInput.type="hidden";indInput.name="indicator";form.appendChild(indInput);
+  const submitSection=document.getElementById("submitSection");
+  const hasRun=localStorage.getItem("dashboard_first_run");
 
-  const saved=JSON.parse(localStorage.getItem("stock_dashboard_session")||"{}");
-  if(saved.time_range){timeBtns.forEach(b=>{if(b.value===saved.time_range)b.classList.add("active-time");});timeInput.value=saved.time_range;}
-  if(saved.indicator){indBtns.forEach(b=>{if(b.value===saved.indicator)b.classList.add("active-ind");});indInput.value=saved.indicator;}
-
-  function saveLocal(){
-    const sessionData={
-      ticker1:document.getElementById("ticker1").value.trim(),
-      ticker2:document.getElementById("ticker2").value.trim(),
-      time_range:timeInput.value,
-      indicator:indInput.value,
-      show_preprocessed:document.querySelector("input[name='show_preprocessed']")?.checked||false
-    };
-    localStorage.setItem("stock_dashboard_session",JSON.stringify(sessionData));
+  if(hasRun==="true"){
+    submitSection.innerHTML=`
+      <button id="updateParamsBtn" type="submit"
+              style="background:#007bff;color:white;border:none;padding:16px 22px;
+                     border-radius:5px;cursor:pointer;font-size:0.95em;">
+        🔄 Update Parameters
+      </button>`;
   }
 
-  timeBtns.forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      timeBtns.forEach(b=>b.classList.remove("active-time"));
-      btn.classList.add("active-time");
-      timeInput.value=btn.value;
-      saveLocal();
-    });
+  document.getElementById("runAnalysisBtn")?.addEventListener("click",()=>{
+    localStorage.setItem("dashboard_first_run","true");
   });
-  indBtns.forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      indBtns.forEach(b=>b.classList.remove("active-ind"));
-      btn.classList.add("active-ind");
-      indInput.value=btn.value;
-      saveLocal();
-    });
+
+  document.addEventListener("click",(e)=>{
+    if(e.target && e.target.id==="updateParamsBtn"){
+      const form=document.getElementById("analysisForm");
+      form.submit();
+    }
+  });
+
+  // Reset when session cleared
+  document.getElementById("clearSessionBtn")?.addEventListener("click",()=>{
+    localStorage.removeItem("dashboard_first_run");
   });
 })();
 </script>
 
-<!-- === Run Analysis === -->
-<script>
-document.getElementById("runAnalysisBtn")?.addEventListener("click",()=>{
-  const sessionData={
-    ticker1:document.getElementById("ticker1").value.trim(),
-    ticker2:document.getElementById("ticker2").value.trim(),
-    time_range:document.querySelector(".active-time")?.value || "1Y",
-    indicator:document.querySelector(".active-ind")?.value || "close",
-    show_preprocessed:document.querySelector("input[name='show_preprocessed']")?.checked||false
-  };
-  localStorage.setItem("stock_dashboard_session",JSON.stringify(sessionData));
-  fetch("/save_session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sessionData)});
-});
-</script>
-
-<!-- === Auto Refresh + News === -->
+<!-- === Auto Refresh + News Section === -->
 <script>
 (function(){
   const ticker="{{(labels and labels[-1]) or ''}}";
@@ -363,14 +318,5 @@ document.getElementById("runAnalysisBtn")?.addEventListener("click",()=>{
   <h3>📰 Latest News</h3>
   <div id="newsContainer" style="margin-top:8px;"><p style="color:#666;">No news loaded yet.</p></div>
 </div>
-
-<!-- === Clear Session Handler === -->
-<script>
-document.getElementById("clearSessionBtn")?.addEventListener("click",()=>{
-  localStorage.removeItem("stock_dashboard_session");
-  alert("✅ Saved session cleared!");
-  fetch("/clear_session",{method:"POST"});
-});
-</script>
 
 {% endblock %}

@@ -1,4 +1,4 @@
-# app.py (your version + News added at the end)
+# app.py (enhanced with user-visible error handling + keeps all original command lines)
 from flask import Flask, render_template, request, jsonify
 import os, copy, requests, timeit
 import pandas as pd
@@ -21,13 +21,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Cache for uploaded files
 uploaded_cache = {
     "file1": None,  # the uploaded file itself
-    "file2": None,  
-    "labels": {"file1": None, "file2": None},    # the label attached to the data
-    "filenames": {"file1": None, "file2": None}, # the corresponding filename
+    "file2": None,
+    "labels": {"file1": None, "file2": None},  # the label attached to the data
+    "filenames": {"file1": None, "file2": None},  # the corresponding filename
 }
 
-ticker_cache = {}   #  ticker symbol: dataframe 
+ticker_cache = {}  # ticker symbol: dataframe
 streak_cache = {}
+
 # Indicator parameter tracking
 indicator_params = {"viewing": None, "timeframe": None}
 
@@ -47,6 +48,7 @@ def index():
     preprocessed_html = None
     show_preprocessed = None
     ticker_summaries = []
+    error_message = None  # capture error to send to frontend
 
     if request.method == "POST":
         print("REQUEST METHOD:", request.method)
@@ -77,8 +79,8 @@ def index():
 
         dfs, labels = [], []
 
-        # Handle Uploaded CSVs 
-        for file_field in ["file1", "file2"]:   
+        # Handle Uploaded CSVs
+        for file_field in ["file1", "file2"]:
             uploaded = request.files.get(file_field)
             if uploaded and uploaded.filename:
                 save_path = os.path.join(UPLOAD_FOLDER, uploaded.filename)
@@ -86,14 +88,14 @@ def index():
                 try:
                     df, label = upload_handling(uploaded, save_path)
                 except Exception as e:
+                    error_message = f"File upload error: {e}"
                     return render_template(
                         "index.html",
                         shown_indicator=indicator_key,
-                        error = e,
+                        error=error_message,
                     )
 
                 df = preprocess_stock_data(df)
-
                 uploaded_cache[file_field] = df
                 uploaded_cache["labels"][file_field] = label
 
@@ -163,10 +165,11 @@ def index():
                         print(f"[WARN] Could not fetch summary for {ticker}: {e}")
 
                 except Exception as e:
+                    error_message = f"Error fetching {ticker}: {e}"
                     return render_template(
                         "index.html",
                         shown_indicator=indicator_key,
-                        error=f"Error fetching {ticker}: {e}",
+                        error=error_message,
                     )
 
                 df["Date"] = pd.to_datetime(df["Date"], errors="coerce", utc=True)
@@ -176,22 +179,35 @@ def index():
                 labels.append(ticker.upper())
 
         if not dfs:
+            error_message = "No data provided. Please provide a ticker or upload a CSV."
             return render_template(
                 "index.html",
                 shown_indicator=indicator_key,
-                error="No data provided. Please provide a ticker or upload a CSV.",
+                error=error_message,
             )
 
         # Update parameters with user's inputs
         for key in request.form.keys():
-            # all parameters in request.form start with indicator_
             if key.startswith(indicator_key):
-                # extract only the parameter name (some parameters have _ in their name)
                 param = key.split('_', 1)[1]
-                # all parameters have to be integer
-                indicator_params[indicator_key][param] = float(request.form.get(key))
+                try:
+                    val = float(request.form.get(key))
+                    if val <= 0:
+                        raise ValueError("Parameter must be greater than 0.")
+                    indicator_params[indicator_key][param] = val
+                except ValueError as ve:
+                    error_message = f"Invalid value for {param}: {ve}"
+                    print(f"\033[91m[PARAM ERROR] {error_message}\033[0m")
+                    return render_template(
+                        "index.html",
+                        shown_indicator=indicator_key,
+                        error=error_message,
+                        params=indicator_params.get(indicator_key, {}),
+                        labels=labels,
+                        summaries=ticker_summaries,
+                    )
 
-        # Apply indicators 
+        # Apply indicators
         applied = []
         for df, label in zip(dfs, labels):
             if df is None or df.empty:
@@ -208,10 +224,17 @@ def index():
                         )
                         print('zkdebug, streak:', streak_info)
                         streak_cache.update(streak_info)
-                    
                 except Exception as e:
-                    print(f"[WARN] Indicator error on {label}: {e}")
-                    df_with_ind = df.copy()
+                    error_message = f"Error applying {indicator_key.upper()} — check parameter values. Details: {e}"
+                    print(f"\033[91m{error_message}\033[0m")
+                    return render_template(
+                        "index.html",
+                        shown_indicator=indicator_key,
+                        error=error_message,
+                        params=indicator_params.get(indicator_key, {}),
+                        labels=labels,
+                        summaries=ticker_summaries,
+                    )
             else:
                 df_with_ind = df.copy()
             applied.append(df_with_ind)
@@ -221,15 +244,17 @@ def index():
 
         try:
             plot_div = plot_close_prices(
-                #aligned_dfs, labels,
                 applied, labels,
                 indicator_key=indicator_key,
                 indicator_params=indicator_params.get(indicator_key, {}),
             )
             print('zkdebug 3', indicator_params.get(indicator_key, {}))
         except Exception as e:
+            error_message = f"Plotting error: {e}"
             return render_template(
-                "index.html", shown_indicator=indicator_key, error=f"Plotting error: {e}"
+                "index.html",
+                shown_indicator=indicator_key,
+                error=error_message
             )
 
         print("\033[93m[INFO] Analysis rendered successfully!\033[0m\n")
@@ -244,11 +269,13 @@ def index():
             time_range=time_range,
             summaries=ticker_summaries,
             preprocessed_html=None,
+            error=error_message,
         )
 
     return render_template("index.html")
 
-# Auto Refresh Feature 
+
+# Auto Refresh Feature
 def _last_two_closes(ticker: str):
     try:
         tk = yf.Ticker(ticker)
@@ -264,6 +291,7 @@ def _last_two_closes(ticker: str):
     except Exception:
         return None, None
 
+
 @app.route("/auto_refresh")
 def auto_refresh():
     ticker = (request.args.get("ticker") or "").upper()
@@ -277,7 +305,7 @@ def auto_refresh():
     return jsonify({"symbol": ticker, "price": last, "change": change, "pct": pct})
 
 
-# News API 
+# News API
 @app.route("/get_news")
 def news_feed():
     ticker = (request.args.get("ticker") or "").upper()
