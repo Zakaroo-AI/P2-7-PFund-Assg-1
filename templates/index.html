@@ -91,13 +91,12 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
 
   <p>Select timeframe:</p>
   <div class="tabs" style="margin-top: 12px;">
-    <button type="submit" name="time_range" value="1M" class="tab {% if time_range=='1M' %}active{% endif %}">1 Month</button>
-    <button type="submit" name="time_range" value="3M" class="tab {% if time_range=='3M' %}active{% endif %}">3 Months</button>
-    <button type="submit" name="time_range" value="6M" class="tab {% if time_range=='6M' %}active{% endif %}">6 Months</button>
-    <button type="submit" name="time_range" value="1Y" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}">1 Year</button>
-    <button type="submit" name="time_range" value="2Y" class="tab {% if time_range=='2Y' %}active{% endif %}">2 Years</button>
+    <button type="button" class="tab {% if time_range=='1M' %}active{% endif %}" data-value="1M">1 Month</button>
+    <button type="button" class="tab {% if time_range=='3M' %}active{% endif %}" data-value="3M">3 Months</button>
+    <button type="button" class="tab {% if time_range=='6M' %}active{% endif %}" data-value="6M">6 Months</button>
+    <button type="button" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}" data-value="1Y">1 Year</button>
+    <button type="button" class="tab {% if time_range=='2Y' %}active{% endif %}" data-value="2Y">2 Years</button>
   </div>
-
 
   <p>Select indicator:</p>
   <div class="tabs" style="margin-top: 12px;">
