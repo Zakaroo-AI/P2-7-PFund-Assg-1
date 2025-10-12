@@ -163,8 +163,17 @@ def apply_indicator(df, key: str, params: dict | None = None):
 
     # === Validate numeric parameters ===
     for k, v in merged_params.items():
-        if isinstance(v, (int, float)) and v <= 0:
-            raise ValueError(f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be > 0.")
+        # Allow zero for tolerance and threshold in DAILYR
+        if key == "dailyr":
+            if isinstance(v, (int, float)) and v < 0:
+                raise ValueError(
+                    f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be >= 0."
+                )
+        else:
+            if isinstance(v, (int, float)) and v <= 0:
+                raise ValueError(
+                    f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be > 0."
+                )
 
     res = None
     try:

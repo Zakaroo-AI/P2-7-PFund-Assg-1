@@ -192,8 +192,21 @@ def index():
                 param = key.split('_', 1)[1]
                 try:
                     val = float(request.form.get(key))
-                    if val <= 0:
-                        raise ValueError("Parameter must be greater than 0.")
+                    if param == "threshold":
+                        if val < 0:
+                            raise ValueError("Parameter must be >= 0.")
+                        # keep as float
+                    elif param == "tolerance":
+                        if val < 0:
+                            raise ValueError("Tolerance must be >= 0.")
+                        # enforce integer tolerance
+                        if abs(val - round(val)) > 1e-9:
+                            raise ValueError("Tolerance must be an integer.")
+                        val = int(round(val))
+                    else:
+                        # default behavior for positive parameters
+                        if val <= 0:
+                            raise ValueError("Parameter must be greater than 0.")
                     indicator_params[indicator_key][param] = val
                 except ValueError as ve:
                     error_message = f"Invalid value for {param}: {ve}"

@@ -3,8 +3,7 @@ import pandas as pd
 def timestamp_to_words(timestamp: str):
     try:
         timestamp = pd.Timestamp(timestamp)
-        month_year = timestamp.strftime('%B %Y')  # eg January 2025
-        
+        month_year = timestamp.strftime('%B %Y')
         day = timestamp.day
         suffixes = ('st', 'nd', 'rd')
 
@@ -28,14 +27,18 @@ def calculate_updown(pct_changes: pd.Series, tolerance: int = 1, threshold: floa
       * Flat (0%) → continue, do NOT reset tolerance
       * Small opposite (<= threshold) → continue, consume 1 tolerance
       * Large opposite (> threshold) → break streak immediately
-      * If tolerance == 0 and any opposite move → break streak
+      * If tolerance == 0 → no forgiveness, any opposite move breaks streak
     """
 
+    # --- Validate inputs ---
     if pct_changes is None or len(pct_changes) == 0:
         return {
             "up_streak": 0, "up_start": None, "up_end": None,
             "down_streak": 0, "down_start": None, "down_end": None,
         }
+
+    if tolerance < 0:
+        raise ValueError("tolerance must be >= 0")
 
     pct = pct_changes.dropna()
     n = len(pct)
@@ -72,13 +75,12 @@ def calculate_updown(pct_changes: pd.Series, tolerance: int = 1, threshold: floa
                 if current == 0:
                     current_start = i
                 current += 1
-                # tolerance unchanged
                 continue
 
             # --- Opposite direction ---
             if opposite_dir:
                 if abs(v) > threshold:
-                    # Big move breaks immediately
+                    # Big opposite move breaks streak
                     if current > max_streak:
                         max_streak = current
                         best_start = current_start
@@ -88,14 +90,24 @@ def calculate_updown(pct_changes: pd.Series, tolerance: int = 1, threshold: floa
                     current_start = None
                     continue
 
-                # Small opposite move → consume tolerance
+                # Handle small opposite move
+                if tolerance == 0:
+                    # No forgiveness allowed — break immediately
+                    if current > max_streak:
+                        max_streak = current
+                        best_start = current_start
+                        best_end = i - 1
+                    current = 0
+                    current_start = None
+                    continue
+
+                # Consume tolerance if available
                 if tol_left > 0:
                     if current == 0:
                         current_start = i
                     current += 1
                     tol_left -= 1
                 else:
-                    # No tolerance left → break
                     if current > max_streak:
                         max_streak = current
                         best_start = current_start
@@ -104,7 +116,7 @@ def calculate_updown(pct_changes: pd.Series, tolerance: int = 1, threshold: floa
                     tol_left = tolerance
                     current_start = None
 
-        # Finalize after loop
+        # Finalize last streak
         if current > max_streak:
             max_streak = current
             best_start = current_start
@@ -113,17 +125,11 @@ def calculate_updown(pct_changes: pd.Series, tolerance: int = 1, threshold: floa
         if best_start is None:
             return 0, None, None
 
-        # Convert to readable timestamps
-        start_date = (
-            timestamp_to_words(pct_changes.index[best_start]) if best_start is not None else None
-        )
-        end_date = (
-            timestamp_to_words(pct_changes.index[best_end]) if best_end is not None else None
-        )
-
+        start_date = timestamp_to_words(idx[best_start])
+        end_date = timestamp_to_words(idx[best_end])
         return max_streak, start_date, end_date
 
-    # Compute for both directions
+    # Compute both
     up_len, up_start, up_end = calc("up")
     down_len, down_start, down_end = calc("down")
 
