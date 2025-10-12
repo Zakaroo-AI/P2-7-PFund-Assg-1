@@ -49,19 +49,15 @@ def calculate_dailyr(df: pd.DataFrame) -> pd.DataFrame:
                 min_price = prices[i]
                 min_date = dates[i]
 
-        df["Buy_Date"] = buy_date
-        df["Sell_Date"] = sell_date
-        df["Buy_Price"] = buy_price
-        df["Sell_Price"] = sell_price
-        df["Price_Diff"] = max_profit
-        df["Max_Profit_Pct"] = (max_profit / buy_price * 100) if buy_price > 0 else 0
+        max_profit_pct = (max_profit / buy_price * 100) if buy_price > 0 else 0
+        info_variables = [buy_date, sell_date, buy_price, sell_price, max_profit, max_profit_pct]
+        df['Info'] = info_variables + [np.nan] * (len(df) - len(info_variables))
 
-    except Exception:
-        df["Buy_Date"] = pd.NaT
-        df["Sell_Date"] = pd.NaT
-        df["Buy_Price"] = None
-        df["Sell_Price"] = None
-        df["Price_Diff"] = 0
-        df["Max_Profit_Pct"] = 0
+    except Exception as e:
+        print('Dailyr exception:', e)
+        info_variables = [pd.NaT, pd.NaT, None, None, 0, 0]
+        df['Info'] = info_variables + [np.nan] * (len(df) - len(info_variables))
 
+
+    df.to_csv('check2.csv')
     return df

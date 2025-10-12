@@ -148,17 +148,6 @@ function setupPlotControls(plot_id) {
         toggleables.push({id: plot_id + '-segments', checkbox: segEntry.checkbox, indices: segIndices});
     }
 
-    if (groups['hover']) {
-        var hovIdx = groups['hover'].indices;
-        var hovDefaultChecked = (gd.data[hovIdx[0]].visible !== 'legendonly' && gd.data[hovIdx[0]].visible !== false);
-        var hovEntry = mkCheckbox(plot_id + '-hover', 'Hover overlay', hovDefaultChecked, function() {
-            var vis = this.checked ? true : false;
-            Plotly.restyle(gd, {'visible': vis}, hovIdx);
-        });
-        ctrl.appendChild(hovEntry.wrap);
-        toggleables.push({id: plot_id + '-hover', checkbox: hovEntry.checkbox, indices: hovIdx});
-    }
-
     Object.keys(groups).forEach(function(k) {
         if (k === 'segments' || k === 'hover') return;
         var idxs = groups[k].indices;

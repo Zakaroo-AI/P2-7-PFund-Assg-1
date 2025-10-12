@@ -373,12 +373,9 @@ def plot_close_prices(
 
             # --- 💰 Max Profit annotation ---
             try:
-                buy_date = df["Buy_Date"].iloc[-1]
-                sell_date = df["Sell_Date"].iloc[-1]
-                buy_price = df["Buy_Price"].iloc[-1]
-                sell_price = df["Sell_Price"].iloc[-1]
-                price_diff = df["Price_Diff"].iloc[-1]
-                profit_pct = df["Max_Profit_Pct"].iloc[-1]
+                buy_date, sell_date, buy_price, sell_price, price_diff, profit_pct = df['Info'].head(6).tolist()
+                buy_date = pd.Timestamp(buy_date)
+                sell_date = pd.Timestamp(sell_date)
 
                 if pd.notna(buy_date) and pd.notna(sell_date) and buy_date != sell_date:
                     fig.add_shape(
