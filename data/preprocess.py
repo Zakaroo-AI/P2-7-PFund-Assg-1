@@ -65,6 +65,7 @@ def preprocess_stock_data(df: pd.DataFrame) -> pd.DataFrame:
     # Fill missing values 
     if 'Close' in df.columns:
         df['Close'] = df['Close'].replace([np.inf, -np.inf], np.nan)
+        # bridges NaN gaps with left and right values, then ffill and bfill to fill up trailing and leading NaNs
         df['Close'] = df['Close'].interpolate(method='linear').ffill().bfill()
 
     if 'Volume' in df.columns:
@@ -74,13 +75,8 @@ def preprocess_stock_data(df: pd.DataFrame) -> pd.DataFrame:
     if 'Close' in df.columns and len(df) > 10:
         q1, q3 = df['Close'].quantile([0.01, 0.99])
         df = df[(df['Close'] >= q1) & (df['Close'] <= q3)]
-
-    
-    if 'Close' in df.columns:
-        df['Daily_Return'] = df['Close'].pct_change() * 100  # %
-        df['Close_Smoothed'] = df['Close'].rolling(window=3, min_periods=1).mean()
-
   
+    # Safety net if got remaining NaNs (probably not)
     df = df.dropna(subset=['Close']).reset_index(drop=True)
 
     return df

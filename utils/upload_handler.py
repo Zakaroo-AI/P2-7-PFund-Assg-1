@@ -24,8 +24,11 @@ def validate_csv_columns(df, required_cols=("Date", "Close")):
     return bool(missing_cols), missing_cols
 
 def upload_handling(uploaded, filepath):
-    # quick sanitising of filename
-    filename = secure_filename(uploaded.filename)
+    if uploaded is not None:
+        # quick sanitising of filename
+        filename = secure_filename(uploaded.filename)
+    else:
+        filename = filepath
     # extracts .extension from filename, then remove .
     label, extension = os.path.splitext(filename)
     extension = extension.lstrip('.')
@@ -37,7 +40,10 @@ def upload_handling(uploaded, filepath):
             e = f'Invalid file type: {extension}.\nAllowed types: {', '.join(ALLOWED_EXTENSIONS)}'
         raise ValueError(e)
 
-    uploaded.save(filepath) # into designated uploads folder
+    try:
+        uploaded.save(filepath) # into designated uploads folder
+    except Exception as e:
+        pass
 
     if extension == 'csv':
         df = pd.read_csv(filepath)
