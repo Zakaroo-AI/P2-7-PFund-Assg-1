@@ -1,40 +1,9 @@
 import pandas as pd
 import numpy as np
 
-def align_dfs(dfs, on='Date'):
-    """
-    Align multiple DataFrames on the same 'Date' column.
+def align_dfs():
 
-    Performs an outer join across all dates, and forward-fills
-    missing values within each DataFrame individually.
-
-    Returns
-    -------
-    list of pd.DataFrame
-        A list of aligned DataFrames (not merged).
-    """
-    if not dfs:
-        return []
-
-    # --- Step 1: Collect all unique dates from every DataFrame ---
-    all_dates = pd.Index([])
-    for df in dfs:
-        if on in df.columns:
-            all_dates = all_dates.union(df[on])
-    all_dates = all_dates.sort_values()
-
-    # --- Step 2: Reindex each DataFrame to this full date range ---
-    aligned_dfs = []
-    for df in dfs:
-        if on not in df.columns:
-            raise ValueError(f"Missing '{on}' column in one of the DataFrames.")
-        
-        temp = df.set_index(on).reindex(all_dates)  # outer join on all dates
-        temp = temp.ffill()                         # forward-fill missing values
-        temp = temp.reset_index().rename(columns={'index': on})
-        aligned_dfs.append(temp)
-
-    return aligned_dfs
+    return
 
 
 def preprocess_stock_data(df: pd.DataFrame) -> pd.DataFrame:
