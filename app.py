@@ -45,8 +45,6 @@ except Exception as e:
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    preprocessed_html = None
-    show_preprocessed = None
     ticker_summaries = []
     error_message = None  # capture error to send to frontend
 
@@ -60,7 +58,6 @@ def index():
         time_range = request.form.get('time_range') or indicator_params['timeframe']
         remove_file = request.form.get('remove_file') or None
         indicator_key = request.form.get('indicator')
-        show_preprocessed = request.form.get("show_preprocessed")
 
         # ==== Debug Logging ====
         print(f"\033[96m[DEBUG] Selected timeframe:\033[0m {time_range}")
@@ -132,10 +129,10 @@ def index():
             if ticker:
                 try:
                     if ticker in ticker_cache.keys():
-                        print(f'zkdebug: retrieving ticker {ticker} from ticker_cache')
+                        print(f'hdebug: retrieving ticker {ticker} from ticker_cache')
                         df, label = ticker_cache[ticker], ticker
                     else:
-                        print(f'zkdebug: query ticker {ticker} from yfinance api')
+                        print(f'hdebug: query ticker {ticker} from yfinance api')
                         df, label = get_stock_data(ticker=ticker)
                         df = preprocess_stock_data(df)
                         ticker_cache[ticker] = df
