@@ -35,9 +35,9 @@ secrets.json
 # Data Files
 # =========================================
 datasets/
-*.csv
-*.xlsx
-*.xls
+#*.csv
+#*.xlsx
+#*.xls
 *.parquet
 *.pkl
 *.h5
