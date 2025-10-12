@@ -153,6 +153,7 @@ def plot_close_prices(
                 mode="lines",
                 name=f"{label} Close",
                 **close_hover_args,   # ✅ Let this fully control hover behavior
+                showlegend=(indicator_key != "dailyr"),
             ),
             row=1,
             col=1,
@@ -409,6 +410,28 @@ def plot_close_prices(
                     )
             except Exception:
                 print("Error, max profit not found!")
+
+
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode='lines',
+                line=dict(color='green', width=3),
+                name='Positive return',
+                hoverinfo='skip'
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode='lines',
+                line=dict(color='red', width=3),
+                name='Negative return',
+                hoverinfo='skip'
+            )
+        )
 
         # Match other charts’ axis and hover feel
         fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)

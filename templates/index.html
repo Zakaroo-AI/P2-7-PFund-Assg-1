@@ -15,59 +15,35 @@
       This dashboard lets you <b>analyze and compare up to two stocks</b> using live or uploaded data.
       You can apply <b>technical indicators</b>, choose <b>time ranges</b>, and view <b>sentiment-based news</b>.
     </p>
-
     <h3>🧩 1. Stock Inputs</h3>
     <ul>
       <li><b>Stock Ticker 1</b> — required (e.g. NVDA).</li>
       <li><b>Ticker 2</b> — optional comparison (e.g. MSFT).</li>
-      <li><b>CSV Upload</b> — use your own dataset if you prefer offline analysis.</li>
+      <li><b>CSV Upload</b> — use your own dataset for offline analysis.</li>
       <li>Use “Remove File” to clear an upload.</li>
     </ul>
-
     <h3>⏱ 2. Timeframe</h3>
-    <p>
-      Filter data to <b>1M, 3M, 6M, 1Y, or 2Y</b> views. The system automatically adjusts plots for both datasets.
-    </p>
-
+    <p>Filter data to <b>1M · 3M · 6M · 1Y · 2Y</b>.</p>
     <h3>📈 3. Indicator Options</h3>
     <table style="width:100%;border-collapse:collapse;">
       <tr><th style="border-bottom:1px solid #ddd;">Indicator</th><th style="border-bottom:1px solid #ddd;">Purpose</th></tr>
-      <tr><td>Close Prices</td><td>Shows closing prices over time.</td></tr>
+      <tr><td>Close Prices</td><td>Closing values over time.</td></tr>
       <tr><td>SMA</td><td>Simple Moving Average for trend direction.</td></tr>
       <tr><td>EMA</td><td>Exponential Moving Average (more reactive).</td></tr>
-      <tr><td>RSI</td><td>Detects overbought/oversold conditions.</td></tr>
-      <tr><td>MACD</td><td>Momentum & signal line divergence.</td></tr>
-      <tr><td>Daily Returns</td><td>Percentage change between days.</td></tr>
+      <tr><td>RSI</td><td>Overbought/oversold signal.</td></tr>
+      <tr><td>MACD</td><td>Momentum divergence.</td></tr>
+      <tr><td>Daily Returns</td><td>Percent change between days.</td></tr>
     </table>
-
-    <h3>⚙️ 4. Parameters</h3>
-    <p>Adjust indicator parameters (e.g. SMA period length). Defaults apply if no options appear.</p>
-
-    <h3>🧼 5. Preprocessing</h3>
-    <p>Enable “Show preprocessed data preview” to inspect cleaned and aligned data.</p>
-
-    <h3>💹 6. Analysis Results</h3>
-    <p>The graph visualizes selected indicators for one or both datasets.</p>
-
-    <h3>📰 7. News & Sentiment</h3>
-    <p>
-      Latest financial news fetched automatically for the last viewed ticker, with sentiment analysis via VADER.
-    </p>
-
-    <h3>🔁 8. Auto Refresh</h3>
-    <p>Use “Auto Refresh” to live-update stock prices every 30 seconds and refresh news every 3 minutes.</p>
-
-    <h3>💡 Tips</h3>
-    <ul>
-      <li>Ensure CSV columns include <code>Date</code> and <code>Close</code>.</li>
-      <li>Align both tickers’ time ranges for fair comparison.</li>
-      <li>Click indicators again to update graphs with new parameters.</li>
-    </ul>
+    <h3>⚙️ 4. Parameters</h3><p>Edit indicator settings (e.g. SMA period).</p>
+    <h3>🧼 5. Preprocessing</h3><p>Enable to preview cleaned data.</p>
+    <h3>💹 6. Analysis Results</h3><p>Graph visualizes indicators for both datasets.</p>
+    <h3>📰 7. News & Sentiment</h3><p>Latest financial news with sentiment analysis.</p>
+    <h3>🔁 8. Auto Refresh</h3><p>Updates prices (30 s) and news (3 min).</p>
   </div>
 </div>
 
 <script>
-document.getElementById("toggleGuide").addEventListener("click", ()=>{
+document.getElementById("toggleGuide").addEventListener("click",()=>{
   const c=document.getElementById("guideContent");
   const b=document.getElementById("toggleGuide");
   const show=c.style.display==="none";
@@ -76,34 +52,50 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
 });
 </script>
 
+<!-- === Highlight Styles for Active Selections === -->
+<style>
+.tab {
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 5px;
+  margin-right: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+.tab:hover { background: #eaeaea; }
+.tab.active-time { background: #007bff; color: white; transform: scale(1.05); }
+.tab.active-ind { background: #28a745; color: white; transform: scale(1.05); }
+</style>
+
 <!-- === Main Dashboard Form === -->
 <form method="POST" enctype="multipart/form-data">
   <input type="hidden" name="time_range" id="time_range_input" value="{{ time_range or '1Y' }}">
   <input type="hidden" name="indicator" id="indicator_input" value="{{ shown_indicator or indicator or 'close' }}">
 
   <label for="ticker1">Enter Stock Ticker 1:</label>
-  <input type="text" name="ticker1" id="ticker1" placeholder="AAPL" value="{{ request.form.ticker1 or '' }}">
-
+  <input type="text" name="ticker1" id="ticker1" placeholder="AAPL" value="{{request.form.ticker1 or ''}}">
   <label for="ticker2">Enter Ticker 2 (optional):</label>
-  <input type="text" name="ticker2" id="ticker2" placeholder="MSFT" value="{{ request.form.ticker2 or '' }}">
+  <input type="text" name="ticker2" id="ticker2" placeholder="MSFT" value="{{request.form.ticker2 or ''}}">
 
   <p>Upload CSV (optional):</p>
-  <input type="file" name="file1" accept=".csv, .xlsx, .json">
-  <label>{% if labels %}{{ labels[0] }}{% endif %}</label>
+  <input type="file" name="file1" accept=".csv,.xlsx,.json">
+  <label>{% if labels %}{{labels[0]}}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file1">Remove File 1</button>
 
   <p>Upload second CSV (optional):</p>
-  <input type="file" name="file2" accept=".csv, .xlsx, .json">
-  <label>{% if labels %}{{ labels[1] }}{% endif %}</label>
+  <input type="file" name="file2" accept=".csv,.xlsx,.json">
+  <label>{% if labels %}{{labels[1]}}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file2">Remove File 2</button>
 
   <p>Select timeframe:</p>
   <div class="tabs" style="margin-top: 12px;">
-    <button type="button" class="tab {% if time_range=='1M' %}active{% endif %}" data-value="1M">1 Month</button>
-    <button type="button" class="tab {% if time_range=='3M' %}active{% endif %}" data-value="3M">3 Months</button>
-    <button type="button" class="tab {% if time_range=='6M' %}active{% endif %}" data-value="6M">6 Months</button>
-    <button type="button" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}" data-value="1Y">1 Year</button>
-    <button type="button" class="tab {% if time_range=='2Y' %}active{% endif %}" data-value="2Y">2 Years</button>
+    <button type="submit" name="time_range" value="1M" class="tab {% if time_range=='1M' %}active{% endif %}">1 Month</button>
+    <button type="submit" name="time_range" value="3M" class="tab {% if time_range=='3M' %}active{% endif %}">3 Months</button>
+    <button type="submit" name="time_range" value="6M" class="tab {% if time_range=='6M' %}active{% endif %}">6 Months</button>
+    <button type="submit" name="time_range" value="1Y" class="tab {% if time_range=='1Y' or not time_range %}active{% endif %}">1 Year</button>
+    <button type="submit" name="time_range" value="2Y" class="tab {% if time_range=='2Y' %}active{% endif %}">2 Years</button>
   </div>
 
 
@@ -115,6 +107,15 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
     <button type="button" class="tab {% if shown_indicator=='rsi' %}active{% endif %}" data-value="rsi">RSI</button>
     <button type="button" class="tab {% if shown_indicator=='macd' %}active{% endif %}" data-value="macd">MACD</button>
     <button type="button" class="tab {% if shown_indicator=='dailyr' %}active{% endif %}" data-value="dailyr">Daily Returns</button>
+  </div>
+  
+  <!-- Manual Run -->
+  <div style="margin-top:12px;">
+    <button id="runAnalysisBtn" type="submit"
+            style="background:#28a745;color:white;border:none;padding:8px 14px;
+                   border-radius:5px;cursor:pointer;font-size:0.95em;">
+      ▶️ Submit
+    </button>
   </div>
 
 
@@ -143,160 +144,195 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
         <p>No parameter metadata for this indicator — defaults will be used.</p>
       {% endif %}
     </div>
+
+  <!-- Update + Clear Buttons -->
+  <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-start;">
+    <button type="submit" name="apply" value="1"
+            style="flex:1;max-width:160px;background:#007bff;color:white;border:none;
+                   padding:6px 10px;border-radius:4px;cursor:pointer;font-size:0.9em;">
+      Update Parameters
+    </button>
+    <button id="clearSessionBtn" type="button"
+            style="flex:1;max-width:160px;background:#dc3545;color:white;border:none;
+                   padding:6px 10px;border-radius:4px;cursor:pointer;font-size:0.9em;">
+      🧹 Clear Saved Session
+    </button>
+  </div>
   {% endif %}
 
   <div style="margin-top:8px;">
     <button type="submit" name="apply" value="1">Analyse</button>
   </div>
 
-  <div style="margin-top: 15px;">
-    <label>
-      <input type="checkbox" name="show_preprocessed" value="1"
-             {% if show_preprocessed %}checked{% endif %}>
-      Show preprocessed data preview
-    </label>
+  <div style="margin-top:15px;">
+    <label><input type="checkbox" name="show_preprocessed" value="1"
+      {% if show_preprocessed %}checked{% endif %}> Show preprocessed data preview</label>
   </div>
 </form>
 
-{% if error %}
-  <p style="color:red">{{ error }}</p>
-{% endif %}
+{% if error %}<p style="color:red">{{error}}</p>{% endif %}
 
 {% if summaries %}
-  <div class="stock-summary-container">
-    {% for s in summaries %}
-      <div class="stock-summary-card">
-        <div class="stock-left">
-          {% if s.logo %}
-            <img src="{{ s.logo }}" alt="{{ s.symbol }} logo" class="stock-logo">
-          {% endif %}
-          <div>
-            <h3>{{ s.name }}</h3>
-            <p>{{ s.symbol }}</p>
-          </div>
-        </div>
-        <div class="stock-right">
-          {% if s.price %}
-            <h3 class="stock-price" data-symbol="{{ s.symbol }}">${{ "%.2f"|format(s.price) }}</h3>
-            <small class="last-updated" data-symbol="{{ s.symbol }}" style="color:#888;">Last updated: —</small>
-          {% endif %}
-          {% if s.change %}
-            <span class="change {% if s.change >= 0 %}pos{% else %}neg{% endif %}">
-              {{ "%+.2f"|format(s.change) }} ({{ "%+.2f"|format(s.pct) }}%)
-            </span>
-          {% endif %}
-        </div>
-      </div>
-    {% endfor %}
+<div class="stock-summary-container">
+{% for s in summaries %}
+  <div class="stock-summary-card">
+    <div class="stock-left">
+      {% if s.logo %}<img src="{{s.logo}}" alt="{{s.symbol}} logo" class="stock-logo">{% endif %}
+      <div><h3>{{s.name}}</h3><p>{{s.symbol}}</p></div>
+    </div>
+    <div class="stock-right">
+      {% if s.price %}
+      <h3 class="stock-price" data-symbol="{{s.symbol}}">${{"%.2f"|format(s.price)}}</h3>
+      <small class="last-updated" data-symbol="{{s.symbol}}" style="color:#888;">Last updated: —</small>
+      {% endif %}
+      {% if s.change %}
+      <span class="change {% if s.change>=0 %}pos{% else %}neg{% endif %}">
+        {{"%+.2f"|format(s.change)}} ({{"%+.2f"|format(s.pct)}}%)
+      </span>
+      {% endif %}
+    </div>
   </div>
+{% endfor %}
+</div>
 {% endif %}
 
 {% if plot_div %}
-  <div id="plot-area" style="margin-top:20px;">
-    <h2>Analysis Results {% if shown_indicator %}- {{ shown_indicator|upper }}{% endif %}</h2>
-    <ul>
-      {% for label in labels %}
-        <li>{{ label }}</li>
-      {% endfor %}
-    </ul>
-    <div id="plot-container">
-      {{ plot_div | safe }}
-    </div>
-  </div>
+<div id="plot-area" style="margin-top:20px;">
+  <h2>Analysis Results {% if shown_indicator %}- {{shown_indicator|upper}}{% endif %}</h2>
+  <ul>{% for label in labels %}<li>{{label}}</li>{% endfor %}</ul>
+  <div id="plot-container">{{plot_div|safe}}</div>
+</div>
 {% endif %}
 
 {% if preprocessed_html %}
-  <h3 style="margin-top:30px;">🧩 Preprocessed Data Preview</h3>
-  <div class="scroll-container">
-    {{ preprocessed_html | safe }}
-  </div>
+<h3 style="margin-top:30px;">🧩 Preprocessed Data Preview</h3>
+<div class="scroll-container">{{preprocessed_html|safe}}</div>
 {% endif %}
 
-<!-- === Auto Refresh for the stock prices === -->
+<!-- === Selection (local only) === -->
 <script>
 (function(){
-  const ticker = "{{ (labels and labels[-1]) or '' }}";
-  if (!ticker) return;
+  const form=document.querySelector("form");
+  const timeBtns=document.querySelectorAll("button[name='time_range']");
+  const indBtns=document.querySelectorAll("button[name='indicator']");
+  const timeInput=document.createElement("input");
+  timeInput.type="hidden";timeInput.name="time_range";form.appendChild(timeInput);
+  const indInput=document.createElement("input");
+  indInput.type="hidden";indInput.name="indicator";form.appendChild(indInput);
 
-  const plotArea = document.getElementById("plot-area");
-  const btn = document.createElement("button");
-  btn.id = "autoRefreshToggle";
-  btn.textContent = "Auto Refresh Off";
-  btn.style = "margin-top:10px;padding:6px 10px;";
-  if (plotArea) plotArea.appendChild(btn);
+  const saved=JSON.parse(localStorage.getItem("stock_dashboard_session")||"{}");
+  if(saved.time_range){timeBtns.forEach(b=>{if(b.value===saved.time_range)b.classList.add("active-time");});timeInput.value=saved.time_range;}
+  if(saved.indicator){indBtns.forEach(b=>{if(b.value===saved.indicator)b.classList.add("active-ind");});indInput.value=saved.indicator;}
 
-  let isOn = false, priceInterval = null, newsInterval = null, lastPrice = null;
+  function saveLocal(){
+    const sessionData={
+      ticker1:document.getElementById("ticker1").value.trim(),
+      ticker2:document.getElementById("ticker2").value.trim(),
+      time_range:timeInput.value,
+      indicator:indInput.value,
+      show_preprocessed:document.querySelector("input[name='show_preprocessed']")?.checked||false
+    };
+    localStorage.setItem("stock_dashboard_session",JSON.stringify(sessionData));
+  }
+
+  timeBtns.forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      timeBtns.forEach(b=>b.classList.remove("active-time"));
+      btn.classList.add("active-time");
+      timeInput.value=btn.value;
+      saveLocal();
+    });
+  });
+  indBtns.forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      indBtns.forEach(b=>b.classList.remove("active-ind"));
+      btn.classList.add("active-ind");
+      indInput.value=btn.value;
+      saveLocal();
+    });
+  });
+})();
+</script>
+
+<!-- === Run Analysis === -->
+<script>
+document.getElementById("runAnalysisBtn")?.addEventListener("click",()=>{
+  const sessionData={
+    ticker1:document.getElementById("ticker1").value.trim(),
+    ticker2:document.getElementById("ticker2").value.trim(),
+    time_range:document.querySelector(".active-time")?.value || "1Y",
+    indicator:document.querySelector(".active-ind")?.value || "close",
+    show_preprocessed:document.querySelector("input[name='show_preprocessed']")?.checked||false
+  };
+  localStorage.setItem("stock_dashboard_session",JSON.stringify(sessionData));
+  fetch("/save_session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sessionData)});
+});
+</script>
+
+<!-- === Auto Refresh + News === -->
+<script>
+(function(){
+  const ticker="{{(labels and labels[-1]) or ''}}";
+  if(!ticker)return;
+  const plotArea=document.getElementById("plot-area");
+  const btn=document.createElement("button");
+  btn.id="autoRefreshToggle";btn.textContent="Auto Refresh Off";
+  btn.style="margin-top:10px;padding:6px 10px;";
+  if(plotArea)plotArea.appendChild(btn);
+
+  let isOn=false,priceInt=null,newsInt=null,lastPrice=null;
 
   function updatePrice(){
-    fetch(`/auto_refresh?ticker=${ticker}`)
-      .then(r=>r.json())
-      .then(data=>{
-        if (!data || !data.price) return;
-        const el = document.querySelector(`.stock-price[data-symbol='${ticker}']`);
-        const ts = document.querySelector(`.last-updated[data-symbol='${ticker}']`);
-        if (!el) return;
-        const newPrice = Number(data.price);
-        el.textContent = `$${newPrice.toFixed(2)}`;
-        if (lastPrice !== null) {
-          const diff = newPrice - lastPrice;
-          el.style.transition = "color 0.5s";
-          el.style.color = diff > 0 ? "green" : diff < 0 ? "red" : "black";
-          setTimeout(()=> el.style.color = "black", 1500);
-        }
-        if (ts) ts.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-        lastPrice = newPrice;
-      }).catch(()=>{});
+    fetch(`/auto_refresh?ticker=${ticker}`).then(r=>r.json()).then(d=>{
+      if(!d||!d.price)return;
+      const el=document.querySelector(`.stock-price[data-symbol='${ticker}']`);
+      const ts=document.querySelector(`.last-updated[data-symbol='${ticker}']`);
+      if(!el)return;
+      const newP=Number(d.price);
+      el.textContent=`$${newP.toFixed(2)}`;
+      if(lastPrice!==null){
+        const diff=newP-lastPrice;
+        el.style.transition="color 0.5s";
+        el.style.color=diff>0?"green":diff<0?"red":"black";
+        setTimeout(()=>el.style.color="black",1500);
+      }
+      if(ts)ts.textContent=`Last updated: ${new Date().toLocaleTimeString()}`;
+      lastPrice=newP;
+    }).catch(()=>{});
   }
 
-  async function loadNews(autoTriggered=false){
-    try {
-      const res = await fetch(`/get_news?ticker=${ticker}`);
-      const data = await res.json();
-      const container = document.getElementById("newsContainer");
-      if (!container) return;
-      container.innerHTML = "";
-      if (data.error){ container.innerHTML = `<p style="color:red;">${data.error}</p>`; return; }
-      if (!data.articles || data.articles.length===0){
-        container.innerHTML = `<p>No recent news found for ${ticker}.</p>`; return;
-      }
+  async function loadNews(auto=false){
+    try{
+      const res=await fetch(`/get_news?ticker=${ticker}`);
+      const data=await res.json();
+      const c=document.getElementById("newsContainer");if(!c)return;
+      c.innerHTML="";
+      if(data.error){c.innerHTML=`<p style='color:red;'>${data.error}</p>`;return;}
+      if(!data.articles||!data.articles.length){c.innerHTML=`<p>No recent news for ${ticker}.</p>`;return;}
       let avg=0;
       data.articles.forEach(a=>{
-        const s=a.sentiment||0; avg+=s;
-        const c=s>0.2?"green":s<-0.2?"red":"#666";
-        container.innerHTML+=`
-        <div style="padding:8px 0;border-bottom:1px solid #ddd;">
-          <a href="${a.url}" target="_blank" style="font-weight:600;">${a.title}</a>
-          <div style="color:#888;font-size:0.9em;">
-            ${a.source||"Unknown"} • ${a.publishedAt?new Date(a.publishedAt).toLocaleString():""}
-          </div>
+        const s=a.sentiment||0;avg+=s;
+        const col=s>0.2?"green":s<-0.2?"red":"#666";
+        c.innerHTML+=`<div style='padding:8px 0;border-bottom:1px solid #ddd;'>
+          <a href='${a.url}' target='_blank' style='font-weight:600;'>${a.title}</a>
+          <div style='color:#888;font-size:0.9em;'>${a.source||"Unknown"} • ${a.publishedAt?new Date(a.publishedAt).toLocaleString():""}</div>
           <div>${a.description||""}</div>
-          <div style="margin-top:4px;color:${c};">Sentiment: ${s.toFixed(2)}</div>
-        </div>`;
+          <div style='margin-top:4px;color:${col};'>Sentiment: ${s.toFixed(2)}</div></div>`;
       });
       avg/=data.articles.length;
-      const mood = avg>0.2?"Positive":avg<-0.2?"Negative":"Neutral";
-      container.insertAdjacentHTML("afterbegin", `<p><b>Overall sentiment:</b> ${mood} ${autoTriggered ? "(auto-updated)" : ""}</p>`);
-    } catch(e){
-      console.error("News load error:", e);
-    }
+      const mood=avg>0.2?"Positive":avg<-0.2?"Negative":"Neutral";
+      c.insertAdjacentHTML("afterbegin",`<p><b>Overall sentiment:</b> ${mood} ${auto?"(auto-updated)":""}</p>`);
+    }catch(e){console.error("News load error:",e);}
   }
 
-  btn.addEventListener("click", ()=>{
-    if (isOn){
-      clearInterval(priceInterval);
-      clearInterval(newsInterval);
-      btn.textContent = "Auto Refresh Off";
-    } else {
-      updatePrice();
-      loadNews(true);
-      priceInterval = setInterval(updatePrice, 30000);  // every 30s
-      newsInterval = setInterval(()=>loadNews(true), 180000);  // every 3 min
-      btn.textContent = "Auto Refresh On";
-    }
-    isOn = !isOn;
+  btn.addEventListener("click",()=>{
+    if(isOn){clearInterval(priceInt);clearInterval(newsInt);btn.textContent="Auto Refresh Off";}
+    else{updatePrice();loadNews(true);
+      priceInt=setInterval(updatePrice,30000);
+      newsInt=setInterval(()=>loadNews(true),180000);
+      btn.textContent="Auto Refresh On";}
+    isOn=!isOn;
   });
-
-  // load once on page load
   loadNews();
 })();
 </script>
@@ -304,9 +340,16 @@ document.getElementById("toggleGuide").addEventListener("click", ()=>{
 <!-- === News Section === -->
 <div id="newsSection" style="margin-top:30px;">
   <h3>📰 Latest News</h3>
-  <div id="newsContainer" style="margin-top:8px;">
-    <p style="color:#666;">No news loaded yet.</p>
-  </div>
+  <div id="newsContainer" style="margin-top:8px;"><p style="color:#666;">No news loaded yet.</p></div>
 </div>
+
+<!-- === Clear Session Handler === -->
+<script>
+document.getElementById("clearSessionBtn")?.addEventListener("click",()=>{
+  localStorage.removeItem("stock_dashboard_session");
+  alert("✅ Saved session cleared!");
+  fetch("/clear_session",{method:"POST"});
+});
+</script>
 
 {% endblock %}
