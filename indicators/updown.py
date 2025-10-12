@@ -1,6 +1,4 @@
 import pandas as pd
-import numpy as np
-from datetime import datetime
 
 def timestamp_to_words(timestamp: str):
     try:
@@ -13,152 +11,116 @@ def timestamp_to_words(timestamp: str):
         if (4 <= day <= 20) or (24 <= day <= 30):
             suffix = 'th'
         else:
-            suffix = suffixes[(day % 10) - 1]   # -1 since dates dont start from 0
+            suffix = suffixes[(day % 10) - 1]
 
-        date_in_words = f'{day}{suffix} {month_year}'
-        return date_in_words
+        return f'{day}{suffix} {month_year}'
     except Exception as e:
         print('zkdebug timestamp error', e)
         return timestamp
 
 
-def calculate_updown(pct_changes: pd.Series, tolerance: int = 0, threshold: float = 0):
-    """ Calculates the average closing price over a user defined period for the specified stock
-
-    Args:
-        data (pd.Series): stock close prices for specified ticker over user-defined period
-        window (int): the amount of data points being calculated, defaults to 5
-        tolerance only exceeds when its in a row
-    Returns:
-        (dict): contains
+def calculate_updown(pct_changes: pd.Series, tolerance: int = 1, threshold: float = 0.5):
     """
-    try:
-        # Convert to np array for speed
-        values = pct_changes.values
-        n = len(values)
+    Calculates the longest upward and downward streaks in daily returns.
 
-        # Handling edge cases
-        if n == 0:
-            return {'up_streak': 0, 'up_start': -1, 'up_end': -1, 
-                    'down_streak': 0, 'down_start': -1, 'down_end': -1}
-        if n == 1:
-            return {'up_streak': 1, 'up_start': 0, 'up_end': 0, 
-                    'down_streak': 1, 'down_start': 0, 'down_end': 0}
-        
-        # Get boolean masks first
-        up_mask = values > 0
-        down_mask = values < 0
-        zero_mask = values == 0
+    Logic
+    -----
+    - Same direction → continue, reset tolerance
+    - Flat (0%) → continue, no tolerance reset
+    - Opposite and small (≤ threshold) → continue, consume 1 tolerance
+    - Opposite and big (> threshold) → end streak immediately
+    - If tolerance == 0 and opposite move → end streak immediately
 
-        # Check if abs(value) exceeds threshold percentage
-        if threshold is not None and threshold != 0:
-            threshold_mask = np.abs(values) > threshold
-        else:   # if no threshold, all pass (False)
-            threshold_mask = np.zeros_like(values, dtype=bool)
+    Parameters
+    ----------
+    pct_changes : pd.Series
+        Daily % changes in closing price.
+    tolerance : int
+        Number of tolerated small opposite moves before streak breaks.
+    threshold : float
+        Defines what counts as a “big opposite move” (%).
 
-
-        # defining fn to handle both upward & downward
-        # define within for variable access
-        def calculate_streak(is_up):
-            # Choose which mask according to direction
-            direction_mask = up_mask if is_up else down_mask
-
-            # Tracked variables
-            max_streak = 1              # Maximum found streak
-            current_streak = 1          # Streak counter
-            tolerance_left = tolerance  # Tolerance remaining, 0 means out of tolerance
-
-            streak_start = 0            # Start of best streak
-            streak_end = 0              # End of best streak
-
-            # Single pass through
-            for i in range(n):
-                # print(f'{i}, value= {values[i]}')
-                # Check if exceeds threshold in opposite direction
-                if threshold_mask[i] and not direction_mask[i]:
-                    print(f'{i}, {values[i]}, threshold exceeded')
-                    # Record new max only when resetting streak
-                    if current_streak > max_streak:
-                        max_streak = current_streak
-                        # Record start+end date
-                        streak_end = i
-                        streak_start = max(i - max_streak + 1, 0)
-                    # Reset variables for next streak
-                    # Start new streak if current point is valid
-                    if direction_mask[i]:
-                        current_streak = 1
-                    else:
-                        current_streak = 0
-                    tolerance_left = tolerance
-                    
-                    continue    # go to next loop
-
-                # check if elememnt i continues streak
-                if direction_mask[i]:
-                    print(f'{i}, {values[i]}, continue and refresh, streak of {current_streak+1}')
-                    current_streak += 1
-                    tolerance_left = tolerance  # Reset tolerance
-                # check if element i is 0, treat as neutral value
-                elif zero_mask[i]:
-                    print(f'{i}, {values[i]}, continue but 0, streak of {current_streak+1}')
-                    current_streak += 1         # No resetting of tolerance
-                # check if we can forgive the opposite direction
-                elif tolerance_left > 0:
-                    print(f'{i}, {values[i]}, continue but tolerate with {tolerance_left}, streak of {current_streak+1}')
-                    current_streak += 1   
-                    tolerance_left -= 1         # consume one tolerance
-                # check if streak breaks
-                else:
-                    #current_streak += 1
-                    print(f'{i}, {values[i]}, ends at {current_streak}, reset streak, wrong direction and no toleration')
-                    # Trimming leading and trailing 0s, opposite directions
-                    try:
-                        streak_end = i - 1
-                        streak_start = max(i - current_streak -1, 0)
-                        print("#============================================")
-                        print(f"testing out, current:{current_streak}, streak breaking for is_up = {is_up}")
-                        print(f"streak start: {streak_start} and streak end: {streak_end}")
-                        for j in range(streak_start, streak_end + 1):
-                            print(f'element index: {j} with {values[j]}')
-                        print("#============================================")
-
-                    except Exception as e:
-                        print(f'zkdebug trying to fix', e)
-                    
-                    
-                    if current_streak > max_streak:
-                        max_streak = current_streak
-                    # Reset variables for next streak
-                    # Start new streak if current point is valid
-                    if direction_mask[i]:
-                        current_streak = 1
-                    else:
-                        current_streak = 0
-                    tolerance_left = tolerance
-                    # Record start+end date
-                    streak_end = i
-                    streak_start = max(i - max_streak + 1, 0)
-
-            # Final check after loop completes
-            if current_streak > max_streak:
-                max_streak = current_streak
-
-            # pct_changes.index gives a pd.Timestamp in string format
-            streak_start = timestamp_to_words(pct_changes.index[streak_start])
-            streak_end = timestamp_to_words(pct_changes.index[streak_end])
-
-            return max_streak, streak_start, streak_end
-
-        up_streak, up_start, up_end = calculate_streak(True)
-        down_streak, down_start, down_end = calculate_streak(False)
-
-        return {
-            'up_streak': up_streak,
-            'up_start': up_start,
-            'up_end': up_end,
-            'down_streak': down_streak,
-            'down_start': down_start,
-            'down_end': down_end
+    Returns
+    -------
+    dict
+        {
+            'up_streak': int,
+            'up_start': str,
+            'up_end': str,
+            'down_streak': int,
+            'down_start': str,
+            'down_end': str
         }
-    except Exception as e:
-        print('zkdebuginsideexcept', e)
+    """
+
+    def calculate_streak(direction='up'):
+        current_streak = 0
+        max_streak = 0
+        tolerance_left = tolerance
+        start_idx = 0
+        best_start = None
+        best_end = None
+
+        for i, r in enumerate(pct_changes):
+            # Same direction
+            if (direction == 'up' and r > 0) or (direction == 'down' and r < 0):
+                current_streak += 1
+                tolerance_left = tolerance
+                continue
+
+            # Flat move
+            if abs(r) < 1e-9:
+                current_streak += 1
+                continue
+
+            # Opposite direction
+            if (direction == 'up' and r < 0) or (direction == 'down' and r > 0):
+                if abs(r) > threshold:
+                    # Big move → break immediately
+                    if current_streak > max_streak:
+                        max_streak = current_streak
+                        best_start = start_idx
+                        best_end = i - 1
+                    current_streak = 0
+                    tolerance_left = tolerance
+                    start_idx = i + 1
+                    continue
+
+                # Small opposite move (within threshold)
+                if tolerance_left > 0:
+                    tolerance_left -= 1
+                    current_streak += 1
+                else:
+                    # No tolerance left → break
+                    if current_streak > max_streak:
+                        max_streak = current_streak
+                        best_start = start_idx
+                        best_end = i - 1
+                    current_streak = 0
+                    tolerance_left = tolerance
+                    start_idx = i + 1
+
+        # Final check after loop
+        if current_streak > max_streak:
+            max_streak = current_streak
+            best_start = start_idx
+            best_end = len(pct_changes) - 1
+
+        # Convert to friendly format
+        start_date = timestamp_to_words(pct_changes.index[best_start]) if best_start is not None else None
+        end_date = timestamp_to_words(pct_changes.index[best_end]) if best_end is not None else None
+
+        return max_streak, start_date, end_date
+
+    # Compute both directions
+    up_streak, up_start, up_end = calculate_streak('up')
+    down_streak, down_start, down_end = calculate_streak('down')
+
+    return {
+        'up_streak': up_streak,
+        'up_start': up_start,
+        'up_end': up_end,
+        'down_streak': down_streak,
+        'down_start': down_start,
+        'down_end': down_end,
+    }

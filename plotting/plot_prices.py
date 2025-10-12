@@ -439,6 +439,80 @@ def plot_close_prices(
                 hoverinfo='skip'
             )
         )
+    # ===== Add Up/Down Streak Visualization =====
+        try:
+            from indicators.updown import calculate_updown
+
+            tolerance = indicator_params.get("tolerance", 0)
+            threshold = indicator_params.get("threshold", 0)
+
+            for df, label in zip(clean_dfs, labels):
+                # Ensure we have Daily Return computed
+                if "DailyR" not in df.columns:
+                    df["DailyR"] = df["Close"].pct_change() * 100
+
+                # Calculate streak info
+                streaks = calculate_updown(df.set_index("Date")["DailyR"], tolerance, threshold)
+
+                # Convert start/end timestamps back to datetime
+                up_start = pd.to_datetime(streaks["up_start"], errors="coerce")
+                up_end = pd.to_datetime(streaks["up_end"], errors="coerce")
+                down_start = pd.to_datetime(streaks["down_start"], errors="coerce")
+                down_end = pd.to_datetime(streaks["down_end"], errors="coerce")
+
+                y_min, y_max = df["Close"].min(), df["Close"].max()
+
+
+                # --- Highlight longest upward streak ---
+                if pd.notna(up_start) and pd.notna(up_end):
+                    fig.add_shape(
+                        type="rect",
+                        x0=up_start,
+                        x1=up_end,
+                        y0=y_min,
+                        y1=y_max,
+                        fillcolor="rgba(0, 255, 0, 0.15)",
+                        line=dict(color="green", dash="dot"),
+                        layer="below",
+                    )
+                    fig.add_annotation(
+                        x=up_end,
+                        y=y_max,
+                        text=f"📈 Up Streak: {streaks['up_streak']} days<br>{streaks['up_start']} → {streaks['up_end']}",
+                        showarrow=False,
+                        font=dict(color="green", size=11),
+                        bgcolor="rgba(255,255,255,0.8)",
+                        bordercolor="green",
+                        borderwidth=1,
+                    )
+
+                # --- Highlight longest downward streak ---
+                if pd.notna(down_start) and pd.notna(down_end):
+                    fig.add_shape(
+                        type="rect",
+                        x0=down_start,
+                        x1=down_end,
+                        y0=y_min,
+                        y1=y_max,
+                        fillcolor="rgba(255, 0, 0, 0.15)",
+                        line=dict(color="red", dash="dot"),
+                        layer="below",
+                        row=1, col=1,
+                    )
+                    fig.add_annotation(
+                        x=down_end,
+                        y=y_min,
+                        text=f"📉 Down Streak: {streaks['down_streak']} days<br>{streaks['down_start']} → {streaks['down_end']}",
+                        showarrow=False,
+                        font=dict(color="red", size=11),
+                        bgcolor="rgba(255,255,255,0.8)",
+                        bordercolor="red",
+                        borderwidth=1,
+                        row=1, col=1,
+                    )
+
+        except Exception as e:
+            print(f"[plot_prices] Error adding up/down streaks: {e}")
 
         # Match other charts’ axis and hover feel
         fig.update_yaxes(title_text="Close Price (colored by Daily Return)", row=1, col=1)
