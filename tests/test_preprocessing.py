@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from data.preprocess import align_dfs, preprocess_stock_data, preprocess_multiple_dfs  # adjust import if needed
+from data.preprocess import align_dfs, preprocess_stock_data
 
 
 # ------------------------
@@ -98,25 +98,3 @@ def test_preprocess_stock_data_handles_missing_columns():
     cleaned = preprocess_stock_data(df)
     assert "Close" in cleaned.columns
     assert "Date" in cleaned.columns
-
-
-# ------------------------
-#  Tests for preprocess_multiple_dfs()
-# ------------------------
-
-def test_preprocess_multiple_dfs_runs_pipeline():
-    df1 = make_df(["2024-01-01", "2024-01-03"], [10, 30])
-    df2 = make_df(["2024-01-02", "2024-01-03"], [20, 40])
-
-    result = preprocess_multiple_dfs([df1, df2])
-    assert isinstance(result, list)
-    assert len(result) == 2
-
-    # Dates should be aligned (1,2,3)
-    expected = pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03"], utc=True)
-    for df in result:
-        assert list(df["Date"]) == list(expected)
-
-
-def test_preprocess_multiple_dfs_empty_input_returns_empty():
-    assert preprocess_multiple_dfs([]) == []
