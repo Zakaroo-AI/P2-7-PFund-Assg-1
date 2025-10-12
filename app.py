@@ -216,11 +216,12 @@ def index():
                 df_with_ind = df.copy()
             applied.append(df_with_ind)
 
-        aligned_df = align_dfs(applied)
+        aligned_dfs = align_dfs(applied)
         print(indicator_params)
 
         try:
             plot_div = plot_close_prices(
+                #aligned_dfs, labels,
                 applied, labels,
                 indicator_key=indicator_key,
                 indicator_params=indicator_params.get(indicator_key, {}),
