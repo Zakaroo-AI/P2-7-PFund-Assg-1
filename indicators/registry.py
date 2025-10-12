@@ -179,5 +179,5 @@ def apply_indicator(df, key: str, params: dict | None = None):
         df = df.copy()
         df[f"{key.upper()}_ERROR"] = str(e)
         return df
-
+    print('zkdebug5 retunring res')
     return res

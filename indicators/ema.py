@@ -1,12 +1,6 @@
 import pandas as pd
 import numpy as np
 
-# def calculate_ema(df, window=20):
-#     df = df.copy()
-#     col = f'EMA_{window}'
-#     df[col] = df['Close'].ewm(span=window, adjust=False).mean()
-#     return df
-
 def calculate_ema(df, interval = 10, smoothing = 2.0, for_macd = False):
     """ Calculates a weighted moving average of closing prices that gives more importance to recent prices
 
@@ -37,6 +31,9 @@ def calculate_ema(df, interval = 10, smoothing = 2.0, for_macd = False):
     if data.size < interval:
         raise IndexError(f'Insufficient data, only {data.size} points selected for interval size of {interval}')
     
+    # handles float inputs
+    interval = int(interval)
+
     # weight -> % of ema represented by the most recent entry
     # weighting more recent entries is greater for shorter intervals
     weight = smoothing / (interval + 1)     

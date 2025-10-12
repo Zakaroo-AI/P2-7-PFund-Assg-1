@@ -175,11 +175,13 @@ def plot_close_prices(
         column name should be 'SMA_20'.
         """
         key = indicator_key.upper()
+        
         if indicator_key == 'sma':
             window = indicator_params.get('window', 5)
         else:
             window = indicator_params.get('interval', 5)
-        colname = f"{key}_{window}"
+        colname = f"{key}_{int(window)}"
+        print('zkdebug10', df[colname])
         for df, label in zip(clean_dfs, labels):
             if colname in df.columns:
                 fig.add_trace(
@@ -211,7 +213,7 @@ def plot_close_prices(
         - Bar plot for histogram (positive/negative divergence).
         """
         period = indicator_params.get("interval", 14)
-        rsi_col = f"RSI_{period}"
+        rsi_col = f"RSI_{int(period)}"
         for df, label in zip(clean_dfs, labels):
             if rsi_col in df.columns:
                 fig.add_trace(

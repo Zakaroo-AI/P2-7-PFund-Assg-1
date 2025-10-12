@@ -12,13 +12,14 @@ def calculate_sma(df, window = 5):
         rolling_sma (list[np.nan, np.float]): list of floats representing average of close prices of last 5 entries (including self)
     """
     data = df["Close"].copy()
-
     # validating invalid inputs
     if window < 1:
         raise ValueError("Window size must be at least 1")
     if data.size < window:
         raise IndexError(f'Insufficient data, only {data.size} points selected for window size of {window}')
 
+    # handles float inputs
+    window = int(window)
     # calculates first window sum, for efficient sliding window calculation
     window_sum = data.iloc[:window].sum()
     # starts with NaN values for initial values
@@ -31,4 +32,5 @@ def calculate_sma(df, window = 5):
         rolling_sma.append(window_sum / window)
 
     df[f'SMA_{window}'] = rolling_sma
+    print('zkalarm,', df[f'SMA_{window}'])
     return df
