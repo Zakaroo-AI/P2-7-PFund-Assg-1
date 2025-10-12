@@ -107,16 +107,6 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
     <button type="button" class="tab {% if shown_indicator=='macd' %}active{% endif %}" data-value="macd">MACD</button>
     <button type="button" class="tab {% if shown_indicator=='dailyr' %}active{% endif %}" data-value="dailyr">Daily Returns</button>
   </div>
-  
-  <!-- Manual Run -->
-  <div style="margin-top:12px;">
-    <button id="runAnalysisBtn" type="submit"
-            style="background:#28a745;color:white;border:none;padding:8px 14px;
-                   border-radius:5px;cursor:pointer;font-size:0.95em;">
-      ▶️ Submit
-    </button>
-  </div>
-
 
   {% if shown_indicator %}
     <div id="editable-params" style="margin-top:12px;">
@@ -146,11 +136,6 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
 
   <!-- Update + Clear Buttons -->
   <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-start;">
-    <button type="submit" name="apply" value="1"
-            style="flex:1;max-width:160px;background:#007bff;color:white;border:none;
-                   padding:6px 10px;border-radius:4px;cursor:pointer;font-size:0.9em;">
-      Update Parameters
-    </button>
     <button id="clearSessionBtn" type="button"
             style="flex:1;max-width:160px;background:#dc3545;color:white;border:none;
                    padding:6px 10px;border-radius:4px;cursor:pointer;font-size:0.9em;">
@@ -159,8 +144,13 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
   </div>
   {% endif %}
 
-  <div style="margin-top:8px;">
-    <button type="submit" name="apply" value="1">Analyse</button>
+  <!-- Manual Run -->
+  <div style="margin-top:12px;">
+    <button id="runAnalysisBtn" type="submit"
+            style="background:#28a745;color:white;border:none;padding:16px 22px;
+                   border-radius:5px;cursor:pointer;font-size:0.95em;">
+      ▶️ Submit
+    </button>
   </div>
 
   <div style="margin-top:15px;">
