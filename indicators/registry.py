@@ -6,6 +6,21 @@ from .macd import calculate_macd
 from .dailyr import calculate_dailyr
 
 # Registry: key -> metadata
+"""
+Indicator registry and dispatcher for applying technical analysis indicators.
+
+This module defines a centralized mapping of indicator keys (e.g., `"sma"`, `"ema"`,
+`"rsi"`, `"macd"`, `"dailyr"`) to their calculation functions, default parameters,
+and plotting metadata. It provides helper functions to retrieve indicator
+specifications and safely apply indicators to a pandas DataFrame.
+
+Typical usage example:
+----------------------
+    from indicators.registry import apply_indicator
+
+    df = pd.read_csv("AAPL.csv")
+    df_with_sma = apply_indicator(df, "sma", {"window": 20})
+"""
 INDICATORS = {
     "sma": {
         "func": calculate_sma,
@@ -42,18 +57,81 @@ INDICATORS = {
 
 
 def get_indicator_keys():
+    """
+    Return a list of all available indicator keys.
+
+    Returns
+    -------
+    list of str
+        A list of indicator names (e.g. `["sma", "ema", "rsi", "macd", "dailyr"]`).
+    """
     return list(INDICATORS.keys())
 
 
 def get_indicator_spec(key: str):
+    """
+    Retrieve the metadata dictionary for a given indicator key.
+
+    Parameters
+    ----------
+    key : str
+        Indicator key name (e.g. `'sma'`, `'ema'`, `'rsi'`).
+
+    Returns
+    -------
+    dict or None
+        Dictionary containing:
+            - `"func"`: Calculation function
+            - `"default_params"`: Default parameters
+            - `"columns"`: Function that returns expected output column names
+            - `"plot_kind"`: Visualization type for plotting
+        Returns `None` if the key is not found.
+    """
     return INDICATORS.get(key)
 
 
 def apply_indicator(df, key: str, params: dict | None = None):
     """
-    Apply the indicator `key` to df if the expected columns are not present.
-    This keeps the operation idempotent.
-    Returns a new DataFrame (copy).
+    Apply the specified indicator to a DataFrame.
+
+    This function dynamically retrieves the correct calculation function and applies
+    it to the given `df`, using either the default parameters or user-specified
+    overrides. If the DataFrame already contains all expected output columns for
+    that indicator, the function simply returns a copy (idempotent behavior) [.copy].
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame containing price data (must include at least `'Close'`).
+    key : str
+        Indicator name, such as `'sma'`, `'ema'`, `'rsi'`, `'macd'`, or `'dailyr'`.
+    params : dict, optional
+        Dictionary of custom parameters for the indicator.
+        Any provided parameters will override the defaults.
+
+    Returns
+    -------
+    pandas.DataFrame
+        New DataFrame including the computed indicator columns.
+        If an error occurs or the key is unknown, returns the original DataFrame.
+
+    Raises
+    ------
+    ValueError
+        If the indicator key is unknown.
+
+    Notes
+    -----
+    - Automatically merges user parameters with defaults.
+    - Skips recalculation if expected columns already exist.
+    - Logs a warning on failure but does not stop execution.
+
+    Example
+    -------
+    >>> df = pd.read_csv("AAPL.csv")
+    >>> df = apply_indicator(df, "rsi", {"interval": 14})
+    >>> df.columns
+    Index([... 'RSI_14'], dtype='object')
     """
     if key is None:
         return df
