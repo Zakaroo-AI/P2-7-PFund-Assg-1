@@ -162,20 +162,36 @@ def apply_indicator(df, key: str, params: dict | None = None):
         return df.copy()
 
     # === Validate numeric parameters ===
-    for k, v in merged_params.items():
-        # Allow zero for tolerance and threshold in DAILYR
-        if key == "dailyr":
-            if isinstance(v, (int, float)) and v < 0:
-                raise ValueError(
-                    f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be >= 0."
-                )
-        else:
-            if isinstance(v, (int, float)) and v <= 0:
-                raise ValueError(
-                    f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be > 0."
-                )
+    ALLOW_ZERO = {"dailyr"}
 
-    res = None
+    for k, v in merged_params.items():
+        if isinstance(v, (int, float)):
+            # Allow 0 for DailyR only
+            if key in ALLOW_ZERO:
+                if v < 0:
+                    raise ValueError(
+                        f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be >= 0."
+                    )
+            else:
+                if v <= 0:
+                    # Special rule for MACD fast_period
+                    if key == "macd" and k == "fast_period":
+                        raise ValueError(
+                            f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be > 0 and less than 'slow_period'."
+                        )
+                    else:
+                        raise ValueError(
+                            f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be > 0."
+                        )
+
+    # === Extra MACD-specific validation ===
+    if key == "macd":
+        fast = merged_params.get("fast_period")
+        slow = merged_params.get("slow_period")
+        if fast is not None and slow is not None and fast >= slow:
+            raise ValueError(
+                f"Invalid parameter 'fast_period'={fast} for indicator 'macd'. Must be > 0 and less than 'slow_period'."
+            )
     try:
         # Call indicator function dynamically
         res = spec["func"](df.copy(), **merged_params)
