@@ -34,7 +34,6 @@ secrets.json
 # =========================================
 # Data Files
 # =========================================
-data/
 datasets/
 *.csv
 *.xlsx
@@ -101,10 +100,3 @@ Desktop.ini
 *.swp
 *.swo
 *~
-
-# =========================================
-# Tests / Notebooks (if applicable)
-# =========================================
-.ipynb_checkpoints/
-tests/pycache/
-test_output/

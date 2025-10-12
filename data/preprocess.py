@@ -5,37 +5,46 @@ def align_dfs(dfs, on='Date'):
     """
     Align multiple DataFrames on the same 'Date' column.
 
-    Performs an outer join across all dates, and forward-fills
-    missing values within each DataFrame individually.
+    - Outer joins across all unique dates found in all DataFrames.
+    - Forward-fills missing values within each DataFrame.
+    - Removes duplicate dates before alignment.
 
     Returns
     -------
     list of pd.DataFrame
-        A list of aligned DataFrames (not merged).
+        A list of aligned DataFrames.
     """
     if not dfs:
         return []
 
-    # --- Step 1: Collect all unique dates from every DataFrame ---
+    # --- Step 1: Collect all unique dates across all DataFrames ---
     all_dates = pd.Index([])
     for df in dfs:
         if on in df.columns:
-            all_dates = all_dates.union(df[on])
-    all_dates = all_dates.sort_values()
+            all_dates = all_dates.union(pd.to_datetime(df[on]))
+    all_dates = all_dates.drop_duplicates().sort_values()
 
-    # --- Step 2: Reindex each DataFrame to this full date range ---
     aligned_dfs = []
+
     for df in dfs:
         if on not in df.columns:
             raise ValueError(f"Missing '{on}' column in one of the DataFrames.")
-        
-        temp = df.set_index(on).reindex(all_dates)  # outer join on all dates
-        temp = temp.ffill()                         # forward-fill missing values
+
+        # --- Step 2: Clean duplicates before reindex ---
+        df = df.copy()
+        df[on] = pd.to_datetime(df[on], errors="coerce")
+
+        # If there are duplicates, aggregate (e.g. last record of the day)
+        if df[on].duplicated().any():
+            df = df.groupby(on, as_index=False).last()
+
+        # --- Step 3: Reindex and fill missing values ---
+        temp = df.set_index(on).reindex(all_dates)  # outer join
+        temp = temp.ffill().bfill()                 # fill both ways for gaps
         temp = temp.reset_index().rename(columns={'index': on})
         aligned_dfs.append(temp)
 
     return aligned_dfs
-
 
 def preprocess_stock_data(df: pd.DataFrame) -> pd.DataFrame:
     """
