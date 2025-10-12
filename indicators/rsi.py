@@ -20,6 +20,9 @@ def calculate_rsi(df, interval = 14):
     if data.size < interval:
         raise IndexError(f'Insufficient data, only {data.size} points selected for window size of {interval}')
 
+    # handles float inputs
+    interval = int(interval)
+
     # calculate close price differences
     differences = data[1:].values - data.values[:-1]  # contains length - 1 elements
 

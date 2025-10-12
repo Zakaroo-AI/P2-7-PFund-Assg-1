@@ -79,7 +79,7 @@ document.getElementById("toggleGuide").addEventListener("click",()=>{
   <label for="ticker2">Enter Ticker 2 (optional):</label>
   <input type="text" name="ticker2" id="ticker2" placeholder="MSFT" value="{{request.form.ticker2 or ''}}">
 
-  <p>Upload CSV (optional):</p>
+  <p>Upload CSV/XLSX/JSON (optional):</p>
   <input type="file" name="file1" accept=".csv,.xlsx,.json">
   <label>{% if labels %}{{labels[0]}}{% endif %}</label>
   <button type="submit" name="remove_file" value="remove_file1">Remove File 1</button>

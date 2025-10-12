@@ -134,24 +134,50 @@ def apply_indicator(df, key: str, params: dict | None = None):
     >>> df.columns
     Index([... 'RSI_14'], dtype='object')
     """
+    import pandas as pd
+
+    # === Defensive checks ===
     if key is None:
         return df
+
     spec = get_indicator_spec(key)
     if spec is None:
         raise ValueError(f"Unknown indicator: {key}")
 
-    params = params or {}
-    merged_params = {**spec["default_params"], **params}    # this overrides default params with new params
-    expected_cols = spec["columns"](merged_params) 
+    if df is None or df.empty:
+        print(f"[WARN] Empty DataFrame passed to apply_indicator('{key}').")
+        return df
 
-    # if all expected columns already exist, skip
+    if "Close" not in df.columns:
+        print(f"[WARN] Missing 'Close' column in data — required for '{key}' indicator.")
+        return df
+
+    # === Merge default + user parameters ===
+    params = params or {}
+    merged_params = {**spec["default_params"], **params}
+    expected_cols = spec["columns"](merged_params)
+
+    # === Skip recalculation if already exists ===
     if all(col in df.columns for col in expected_cols):
         return df.copy()
 
-    # otherwise call the indicator function with merged params
+    # === Validate numeric parameters ===
+    for k, v in merged_params.items():
+        if isinstance(v, (int, float)) and v <= 0:
+            raise ValueError(f"Invalid parameter '{k}'={v} for indicator '{key}'. Must be > 0.")
+
+    res = None
     try:
+        # Call indicator function dynamically
         res = spec["func"](df.copy(), **merged_params)
+        if res is None:
+            raise ValueError(f"{key} function returned None or invalid output.")
+        print(f"[INFO] {key.upper()} applied successfully with parameters: {merged_params}")
     except Exception as e:
-        print(f'{key} function failure: {e}')
-        raise ValueError(f'{key} function failure: {e}')
+        print(f"[ERROR] {key} function failure: {e}")
+        # Return dataframe with error info embedded (for safe rendering)
+        df = df.copy()
+        df[f"{key.upper()}_ERROR"] = str(e)
+        return df
+    print('zkdebug5 retunring res')
     return res

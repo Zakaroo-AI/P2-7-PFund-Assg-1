@@ -21,106 +21,117 @@ def timestamp_to_words(timestamp: str):
 
 def calculate_updown(pct_changes: pd.Series, tolerance: int = 1, threshold: float = 0.5):
     """
-    Calculates the longest upward and downward streaks in daily returns.
+    Calculate the longest upward and downward streaks in daily percent changes.
 
-    Logic
-    -----
-    - Same direction → continue, reset tolerance
-    - Flat (0%) → continue, no tolerance reset
-    - Opposite and small (≤ threshold) → continue, consume 1 tolerance
-    - Opposite and big (> threshold) → end streak immediately
-    - If tolerance == 0 and opposite move → end streak immediately
-
-    Parameters
-    ----------
-    pct_changes : pd.Series
-        Daily % changes in closing price.
-    tolerance : int
-        Number of tolerated small opposite moves before streak breaks.
-    threshold : float
-        Defines what counts as a “big opposite move” (%).
-
-    Returns
-    -------
-    dict
-        {
-            'up_streak': int,
-            'up_start': str,
-            'up_end': str,
-            'down_streak': int,
-            'down_start': str,
-            'down_end': str
-        }
+    Logic:
+      * Same direction → continue, reset tolerance
+      * Flat (0%) → continue, do NOT reset tolerance
+      * Small opposite (<= threshold) → continue, consume 1 tolerance
+      * Large opposite (> threshold) → break streak immediately
+      * If tolerance == 0 and any opposite move → break streak
     """
 
-    def calculate_streak(direction='up'):
-        current_streak = 0
+    if pct_changes is None or len(pct_changes) == 0:
+        return {
+            "up_streak": 0, "up_start": None, "up_end": None,
+            "down_streak": 0, "down_start": None, "down_end": None,
+        }
+
+    pct = pct_changes.dropna()
+    n = len(pct)
+    values = pct.values
+    idx = pct.index
+
+    def calc(direction: str):
+        current = 0
         max_streak = 0
-        tolerance_left = tolerance
-        start_idx = 0
+        tol_left = tolerance
+        current_start = None
         best_start = None
         best_end = None
 
-        for i, r in enumerate(pct_changes):
-            # Same direction
-            if (direction == 'up' and r > 0) or (direction == 'down' and r < 0):
-                current_streak += 1
-                tolerance_left = tolerance
+        for i, v in enumerate(values):
+            # Determine direction
+            if direction == "up":
+                same_dir = v > 0
+                opposite_dir = v < 0
+            else:  # down
+                same_dir = v < 0
+                opposite_dir = v > 0
+
+            # --- Same direction ---
+            if same_dir:
+                if current == 0:
+                    current_start = i
+                current += 1
+                tol_left = tolerance  # reset tolerance
                 continue
 
-            # Flat move
-            if abs(r) < 1e-9:
-                current_streak += 1
+            # --- Flat (0%) ---
+            if abs(v) < 1e-9:
+                if current == 0:
+                    current_start = i
+                current += 1
+                # tolerance unchanged
                 continue
 
-            # Opposite direction
-            if (direction == 'up' and r < 0) or (direction == 'down' and r > 0):
-                if abs(r) > threshold:
-                    # Big move → break immediately
-                    if current_streak > max_streak:
-                        max_streak = current_streak
-                        best_start = start_idx
+            # --- Opposite direction ---
+            if opposite_dir:
+                if abs(v) > threshold:
+                    # Big move breaks immediately
+                    if current > max_streak:
+                        max_streak = current
+                        best_start = current_start
                         best_end = i - 1
-                    current_streak = 0
-                    tolerance_left = tolerance
-                    start_idx = i + 1
+                    current = 0
+                    tol_left = tolerance
+                    current_start = None
                     continue
 
-                # Small opposite move (within threshold)
-                if tolerance_left > 0:
-                    tolerance_left -= 1
-                    current_streak += 1
+                # Small opposite move → consume tolerance
+                if tol_left > 0:
+                    if current == 0:
+                        current_start = i
+                    current += 1
+                    tol_left -= 1
                 else:
                     # No tolerance left → break
-                    if current_streak > max_streak:
-                        max_streak = current_streak
-                        best_start = start_idx
+                    if current > max_streak:
+                        max_streak = current
+                        best_start = current_start
                         best_end = i - 1
-                    current_streak = 0
-                    tolerance_left = tolerance
-                    start_idx = i + 1
+                    current = 0
+                    tol_left = tolerance
+                    current_start = None
 
-        # Final check after loop
-        if current_streak > max_streak:
-            max_streak = current_streak
-            best_start = start_idx
-            best_end = len(pct_changes) - 1
+        # Finalize after loop
+        if current > max_streak:
+            max_streak = current
+            best_start = current_start
+            best_end = n - 1
 
-        # Convert to friendly format
-        start_date = timestamp_to_words(pct_changes.index[best_start]) if best_start is not None else None
-        end_date = timestamp_to_words(pct_changes.index[best_end]) if best_end is not None else None
+        if best_start is None:
+            return 0, None, None
+
+        # Convert to readable timestamps
+        start_date = (
+            timestamp_to_words(pct_changes.index[best_start]) if best_start is not None else None
+        )
+        end_date = (
+            timestamp_to_words(pct_changes.index[best_end]) if best_end is not None else None
+        )
 
         return max_streak, start_date, end_date
 
-    # Compute both directions
-    up_streak, up_start, up_end = calculate_streak('up')
-    down_streak, down_start, down_end = calculate_streak('down')
+    # Compute for both directions
+    up_len, up_start, up_end = calc("up")
+    down_len, down_start, down_end = calc("down")
 
     return {
-        'up_streak': up_streak,
-        'up_start': up_start,
-        'up_end': up_end,
-        'down_streak': down_streak,
-        'down_start': down_start,
-        'down_end': down_end,
+        "up_streak": up_len,
+        "up_start": up_start,
+        "up_end": up_end,
+        "down_streak": down_len,
+        "down_start": down_start,
+        "down_end": down_end,
     }

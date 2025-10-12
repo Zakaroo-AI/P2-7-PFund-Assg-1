@@ -27,6 +27,11 @@ def calculate_macd(df, fast_period = 12, slow_period = 26, signal_period = 9):
     if len(data) < slow_period + signal_period:
         raise IndexError("Insufficient data for the given periods")
     
+    # handles float inputs
+    fast_period = int(fast_period)
+    slow_period = int(slow_period)
+    signal_period = int(signal_period)
+
     # Calculate EMAs for fast and slow periods
     ema_fast = calculate_ema(data, interval = fast_period, for_macd = True)
     ema_slow = calculate_ema(data, interval = slow_period, for_macd = True)
