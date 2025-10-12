@@ -57,9 +57,13 @@ def index():
         ticker2 = request.form.get('ticker2', '').strip() or None
         time_range = request.form.get('time_range') or indicator_params['timeframe']
         remove_file = request.form.get('remove_file') or None
-
         indicator_key = request.form.get('indicator')
         show_preprocessed = request.form.get("show_preprocessed")
+
+        # ==== Debug Logging ====
+        print(f"\033[96m[DEBUG] Selected timeframe:\033[0m {time_range}")
+        print(f"\033[96m[DEBUG] Selected indicator:\033[0m {indicator_key}")
+        # =======================
 
         if indicator_key:
             indicator_params["viewing"] = indicator_key
@@ -228,6 +232,8 @@ def index():
                 "index.html", shown_indicator=indicator_key, error=f"Plotting error: {e}"
             )
 
+        print("\033[93m[INFO] Analysis rendered successfully!\033[0m\n")
+
         return render_template(
             "index.html",
             shown_indicator=indicator_key,
@@ -247,6 +253,7 @@ def clear_cache():
     uploaded_cache["file1"] = None
     uploaded_cache["file2"] = None
     uploaded_cache["labels"] = {"file1": None, "file2": None}
+    print("\033[91m[CACHE CLEARED]\033[0m")
     return "Cache cleared."
 
 
@@ -308,6 +315,28 @@ def news_feed():
         return jsonify({"articles": articles})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ==============================
+# Save / Clear Session Logging
+# ==============================
+@app.route("/save_session", methods=["POST"])
+def save_session():
+    data = request.json or {}
+    print("\033[92m\n=== SESSION SAVED ===\033[0m")
+    print(f"Ticker 1: {data.get('ticker1', '')}")
+    print(f"Ticker 2: {data.get('ticker2', '')}")
+    print(f"Time Range: {data.get('time_range', '')}")
+    print(f"Indicator: {data.get('indicator', '')}")
+    print(f"Show Preprocessed: {data.get('show_preprocessed', '')}")
+    print("\033[92m======================\033[0m\n")
+    return jsonify({"message": "Session saved"}), 200
+
+
+@app.route("/clear_session", methods=["POST"])
+def clear_session():
+    print("\033[91m\n=== SESSION CLEARED ===\033[0m\n")
+    return jsonify({"message": "Session cleared"}), 200
 
 
 if __name__ == "__main__":

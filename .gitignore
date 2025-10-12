@@ -1,5 +1,111 @@
-uploads/
-static/images/plot.png
-__pycache__/
-*.pyc
+# =========================================
+# Python
+# =========================================
+pycache/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Byte-compiled / optimized / DLL files
+*.so
+*.dll
+*.dylib
+
+# =========================================
+# Flask & Local Config
+# =========================================
+# Flask instance folder (for uploaded files, runtime state)
+instance/
+# Flask secrets and environment vars
 .env
+.env.*
+*.env
+config.json
+secrets.json
+
+# Gunicorn / uWSGI / Flask run artifacts
+*.pid
+*.log
+
+# =========================================
+# Data Files
+# =========================================
+data/
+datasets/
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.pkl
+*.h5
+*.zip
+
+# =========================================
+# Plotly / HTML Output
+# =========================================
+# Exported HTML plots (generated dynamically)
+*.html
+*.htm
+# EXCEPT your Flask templates
+!templates/
+!templates/*.html
+
+# =========================================
+# Cache & Temp Files
+# =========================================
+.cache/
+cache/
+*.bak
+*.tmp
+tmp/
+temp/
+output/
+output_*.*
+exports/
+reports/
+
+# =========================================
+# Frontend Assets
+# =========================================
+# Node.js build artifacts (if used)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Bundles or minified builds
+dist/
+build/
+public/
+*.map
+
+# =========================================
+# IDE & System Files
+# =========================================
+# VSCode
+.vscode/
+# PyCharm
+.idea/
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+# Others
+*.swp
+*.swo
+*~
+
+# =========================================
+# Tests / Notebooks (if applicable)
+# =========================================
+.ipynb_checkpoints/
+tests/pycache/
+test_output/
