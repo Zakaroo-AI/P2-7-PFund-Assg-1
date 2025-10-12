@@ -124,3 +124,30 @@ input[type="checkbox"] {
   transform: scale(1.2);
   margin-right: 6px;
 }
+
+/* === Tab styling for timeframe & indicator buttons === */
+button.tab {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background-color: #f8f9fa;
+  color: #333;
+  border-radius: 6px;
+  margin-right: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+/* Hover feedback */
+button.tab:hover {
+  background-color: #e9ecef;
+  border-color: #bbb;
+}
+
+/* Active (selected) state — visually distinct */
+button.tab.active {
+  background-color: #007bff; /* Primary blue */
+  color: white;
+  border-color: #007bff;
+  font-weight: 600;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+}

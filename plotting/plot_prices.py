@@ -3,7 +3,6 @@ from typing import List
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
-from indicators.registry import apply_indicator
 from plotly.subplots import make_subplots
 
 #========================================= Presets =========================================#
@@ -176,7 +175,10 @@ def plot_close_prices(
         column name should be 'SMA_20'.
         """
         key = indicator_key.upper()
-        window = indicator_params.get("window") or (indicator_params.get("period") or 20)
+        if indicator_key == 'sma':
+            window = indicator_params.get('window', 5)
+        else:
+            window = indicator_params.get('interval', 5)
         colname = f"{key}_{window}"
         for df, label in zip(clean_dfs, labels):
             if colname in df.columns:
@@ -208,7 +210,7 @@ def plot_close_prices(
         - Line plots for MACD and signal.
         - Bar plot for histogram (positive/negative divergence).
         """
-        period = indicator_params.get("period", 14)
+        period = indicator_params.get("interval", 14)
         rsi_col = f"RSI_{period}"
         for df, label in zip(clean_dfs, labels):
             if rsi_col in df.columns:

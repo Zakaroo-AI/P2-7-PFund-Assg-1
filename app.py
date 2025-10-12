@@ -92,26 +92,6 @@ def index():
                         error = e,
                     )
 
-                # if not allowed_file(filename):
-                #     return render_template(
-                #         "index.html",
-                #         shown_indicator=indicator_key,
-                #         error=f"File not allowed: {filename}",
-                #     )
-
-                # try:
-                #     validate_csv_columns(save_path, required_cols=["Date", "Close"])
-                # except Exception as e:
-                #     return render_template(
-                #         "index.html", shown_indicator=indicator_key, error=str(e)
-                #     )
-
-                # df, label = get_stock_data(filepath=save_path)
-                # if not label or label.lower() in ["data", "stock data"]:
-                #     label = os.path.splitext(filename)[0]
-
-                # df["Date"] = pd.to_datetime(df["Date"], errors="coerce", utc=True)
-                # df = df.sort_values("Date").reset_index(drop=True)
                 df = preprocess_stock_data(df)
 
                 uploaded_cache[file_field] = df
@@ -202,6 +182,15 @@ def index():
                 error="No data provided. Please provide a ticker or upload a CSV.",
             )
 
+        # Update parameters with user's inputs
+        for key in request.form.keys():
+            # all parameters in request.form start with indicator_
+            if key.startswith(indicator_key):
+                # extract only the parameter name (some parameters have _ in their name)
+                param = key.split('_', 1)[1]
+                # all parameters have to be integer
+                indicator_params[indicator_key][param] = int(request.form.get(key))
+
         # Apply indicators 
         applied = []
         for df, label in zip(dfs, labels):
@@ -220,6 +209,7 @@ def index():
             applied.append(df_with_ind)
 
         aligned_df = align_dfs(applied)
+        print(indicator_params)
 
         try:
             plot_div = plot_close_prices(
@@ -227,6 +217,7 @@ def index():
                 indicator_key=indicator_key,
                 indicator_params=indicator_params.get(indicator_key, {}),
             )
+            print('zkdebug 3', indicator_params.get(indicator_key, {}))
         except Exception as e:
             return render_template(
                 "index.html", shown_indicator=indicator_key, error=f"Plotting error: {e}"
@@ -246,16 +237,6 @@ def index():
         )
 
     return render_template("index.html")
-
-
-@app.route("/clear_cache")
-def clear_cache():
-    uploaded_cache["file1"] = None
-    uploaded_cache["file2"] = None
-    uploaded_cache["labels"] = {"file1": None, "file2": None}
-    print("\033[91m[CACHE CLEARED]\033[0m")
-    return "Cache cleared."
-
 
 # Auto Refresh Feature 
 def _last_two_closes(ticker: str):

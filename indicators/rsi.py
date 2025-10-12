@@ -1,22 +1,6 @@
 import pandas as pd
 import numpy as np
 
-# def calculate_rsi(df, period=14):
-#     df = df.copy()
-#     delta = df['Close'].diff()
-#     gain = delta.clip(lower=0)
-#     loss = -delta.clip(upper=0)
-
-
-#     # Simple rolling average (Wilder smoothing could be used later)
-#     avg_gain = gain.rolling(window=period, min_periods=period).mean()
-#     avg_loss = loss.rolling(window=period, min_periods=period).mean()
-
-
-#     rs = avg_gain / avg_loss
-#     rsi = 100 - (100 / (1 + rs))
-#     df[f'RSI_{period}'] = rsi
-#     return df
 
 def calculate_rsi(df, interval = 14):
     """ Measures the speed and magnitude of recent price changes to detect overbought/oversold conditions
