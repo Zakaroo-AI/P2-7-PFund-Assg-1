@@ -181,7 +181,6 @@ def plot_close_prices(
         else:
             window = indicator_params.get('interval', 5)
         colname = f"{key}_{int(window)}"
-        print('zkdebug10', df[colname])
         for df, label in zip(clean_dfs, labels):
             if colname in df.columns:
                 fig.add_trace(

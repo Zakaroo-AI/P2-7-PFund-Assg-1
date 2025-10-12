@@ -14,7 +14,6 @@ def timestamp_to_words(timestamp: str):
 
         return f'{day}{suffix} {month_year}'
     except Exception as e:
-        print('zkdebug timestamp error', e)
         return timestamp
 
 

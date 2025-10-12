@@ -32,5 +32,4 @@ def calculate_sma(df, window = 5):
         rolling_sma.append(window_sum / window)
 
     df[f'SMA_{window}'] = rolling_sma
-    print('zkalarm,', df[f'SMA_{window}'])
     return df

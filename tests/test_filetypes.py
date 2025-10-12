@@ -14,7 +14,6 @@ def test_upload_handling_file_types(filename):
     """Test upload_handling with different file types using parameterization."""
     test_data_dir = Path(__file__).parent.parent / "tests_data"
     file_path = test_data_dir / filename
-    print('zkcheck',file_path)
     
     result, _ = upload_handling(None, str(file_path))
     

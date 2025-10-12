@@ -231,12 +231,10 @@ def index():
                         df_with_ind = apply_indicator(
                             df, indicator_key, params=indicator_params.get(indicator_key, {})
                         )
-                        print('zkdebug6', df_with_ind)
                     else:
                         df_with_ind, streak_info = apply_indicator(
                             df, indicator_key, params=indicator_params.get(indicator_key, {})
                         )
-                        print('zkdebug, streak:', streak_info)
                         streak_cache.update(streak_info)
                 except Exception as e:
                     error_message = f"Error applying {indicator_key.upper()} — check parameter values. Details: {e}"
@@ -258,11 +256,10 @@ def index():
 
         try:
             plot_div = plot_close_prices(
-                applied, labels,
+                aligned_dfs, labels,
                 indicator_key=indicator_key,
                 indicator_params=indicator_params.get(indicator_key, {}),
             )
-            print('zkdebug 3', indicator_params.get(indicator_key, {}))
         except Exception as e:
             error_message = f"Plotting error: {e}"
             return render_template(

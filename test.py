@@ -18,7 +18,6 @@ def timestamp_to_words(timestamp: str):
         date_in_words = f'{day}{suffix} {month_year}'
         return date_in_words
     except Exception as e:
-        print('zkdebug timestamp error', e)
         return timestamp
 
 
@@ -161,7 +160,7 @@ def calculate_updown(pct_changes: pd.Series, tolerance: int = 0, threshold: floa
             'down_end': down_end
         }
     except Exception as e:
-        print('zkdebuginsideexcept', e)
+        print(e)
 
 l1 = [np.nan, 1,1,1,1,1,-1,-1,-1,0,1]
 s1 = pd.Series(l1)
