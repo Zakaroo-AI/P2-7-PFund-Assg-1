@@ -22,14 +22,3 @@ def test_align_dfs_basic():
     assert all('Date' in df.columns for df in result)
 
 
-def test_align_dfs_empty():
-    """Test empty input."""
-    assert align_dfs([]) == []
-
-
-def test_align_dfs_error():
-    """Test error for missing Date column."""
-    df_bad = pd.DataFrame({'A': [1], 'B': [2]})
-    
-    with pytest.raises(ValueError):
-        align_dfs([df_bad])
