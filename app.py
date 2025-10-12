@@ -218,7 +218,7 @@ def index():
                         df_with_ind = apply_indicator(
                             df, indicator_key, params=indicator_params.get(indicator_key, {})
                         )
-                        print('zkdebug6', df_with_ind.head())
+                        print('zkdebug6', df_with_ind)
                     else:
                         df_with_ind, streak_info = apply_indicator(
                             df, indicator_key, params=indicator_params.get(indicator_key, {})
