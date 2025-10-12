@@ -153,4 +153,5 @@ def apply_indicator(df, key: str, params: dict | None = None):
         res = spec["func"](df.copy(), **merged_params)
     except Exception as e:
         print(f'{key} function failure: {e}')
+        raise ValueError(f'{key} function failure: {e}')
     return res

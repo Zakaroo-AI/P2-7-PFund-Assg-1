@@ -80,16 +80,3 @@ def preprocess_stock_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna(subset=['Close']).reset_index(drop=True)
 
     return df
-
-
-def preprocess_multiple_dfs(dfs):
-    """
-    Preprocess and align multiple DataFrames.
-    Returns: list of preprocessed DataFrames aligned by Date.
-    """
-    if not dfs:
-        return []
-
-    cleaned = [preprocess_stock_data(df) for df in dfs]
-    aligned = align_dfs(cleaned, on='Date')
-    return aligned

@@ -189,7 +189,16 @@ def index():
                 # extract only the parameter name (some parameters have _ in their name)
                 param = key.split('_', 1)[1]
                 # all parameters have to be integer
-                indicator_params[indicator_key][param] = float(request.form.get(key))
+                try:
+                    indicator_params[indicator_key][param] = float(request.form.get(key))
+                except Exception as e:
+                    print('zkerror hjer', e)
+                    return render_template(
+                        "index.html",
+                        shown_indicator=indicator_key,
+                        error=f"Invalid value for parameter {param}: {request.form.get(key)}. Please provide a numeric value."
+                    )
+
 
         # Apply indicators 
         applied = []

@@ -12,7 +12,6 @@ def calculate_sma(df, window = 5):
         rolling_sma (list[np.nan, np.float]): list of floats representing average of close prices of last 5 entries (including self)
     """
     data = df["Close"].copy()
-
     # validating invalid inputs
     if window < 1:
         raise ValueError("Window size must be at least 1")
