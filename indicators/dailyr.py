@@ -24,7 +24,8 @@ def calculate_dailyr(df: pd.DataFrame, tolerance: int, threshold: float) -> pd.D
     df["DailyR"] = df["Close"].pct_change() * 100
     df["DailyR"] = df["DailyR"].replace([np.inf, -np.inf], np.nan)
     print('zkdebug cols', df.columns, df.index)
-    streak_info = calculate_updown(df["DailyR"], tolerance=tolerance, threshold=threshold)
+    pct_changes_with_dates = df.set_index('Date')['DailyR']
+    streak_info = calculate_updown(pct_changes_with_dates, tolerance=tolerance, threshold=threshold)
     # print('zkdebugupdown', streak_info)
 
     # --- 💰 Max Profit (single trade) ---

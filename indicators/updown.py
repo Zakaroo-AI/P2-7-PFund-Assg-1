@@ -1,5 +1,26 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime
+
+def timestamp_to_words(timestamp: str):
+    try:
+        timestamp = pd.Timestamp(timestamp)
+        month_year = timestamp.strftime('%B %Y')  # eg January 2025
+        
+        day = timestamp.day
+        suffixes = ('st', 'nd', 'rd')
+
+        if (4 <= day <= 20) or (24 <= day <= 30):
+            suffix = 'th'
+        else:
+            suffix = suffixes[(day % 10) - 1]   # -1 since dates dont start from 0
+
+        date_in_words = f'{day}{suffix} {month_year}'
+        return date_in_words
+    except Exception as e:
+        print('zkdebug timestamp error', e)
+        return timestamp
+
 
 def calculate_updown(pct_changes: pd.Series, tolerance: int = 0, threshold: float = 0):
     """ Calculates the average closing price over a user defined period for the specified stock
@@ -102,8 +123,10 @@ def calculate_updown(pct_changes: pd.Series, tolerance: int = 0, threshold: floa
             if current_streak > max_streak:
                 max_streak = current_streak
 
-            print('zkdebug dates1,', pct_changes.index[streak_start])
-            print('zkdebug dates2,', pct_changes.index[streak_end])
+            # pct_changes.index gives a pd.Timestamp in string format
+            streak_start = timestamp_to_words(pct_changes.index[streak_start])
+            streak_end = timestamp_to_words(pct_changes.index[streak_end])
+
             return max_streak, streak_start, streak_end
 
         up_streak, up_start, up_end = calculate_streak(True)
