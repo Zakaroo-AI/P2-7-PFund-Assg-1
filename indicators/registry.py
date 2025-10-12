@@ -4,6 +4,7 @@ from .ema import calculate_ema
 from .rsi import calculate_rsi
 from .macd import calculate_macd
 from .dailyr import calculate_dailyr
+from .updown import calculate_updown
 
 # Registry: key -> metadata
 """
@@ -49,7 +50,7 @@ INDICATORS = {
     },
     "dailyr": {
         "func": calculate_dailyr,
-        "default_params": {},  # no parameters needed
+        "default_params": {"tolerance": 0, "threshold": 0.00},  # no parameters needed
         "columns": lambda p: ["DailyR"],
         "plot_kind": "separate_dailyr",  # show on its own subplot
     },

@@ -27,7 +27,7 @@ uploaded_cache = {
 }
 
 ticker_cache = {}   #  ticker symbol: dataframe 
-
+streak_cache = {}
 # Indicator parameter tracking
 indicator_params = {"viewing": None, "timeframe": None}
 
@@ -189,7 +189,7 @@ def index():
                 # extract only the parameter name (some parameters have _ in their name)
                 param = key.split('_', 1)[1]
                 # all parameters have to be integer
-                indicator_params[indicator_key][param] = int(request.form.get(key))
+                indicator_params[indicator_key][param] = float(request.form.get(key))
 
         # Apply indicators 
         applied = []
@@ -198,9 +198,17 @@ def index():
                 continue
             if indicator_key not in [None, "close"]:
                 try:
-                    df_with_ind = apply_indicator(
-                        df, indicator_key, params=indicator_params.get(indicator_key, {})
-                    )
+                    if indicator_key != 'dailyr':
+                        df_with_ind = apply_indicator(
+                            df, indicator_key, params=indicator_params.get(indicator_key, {})
+                        )
+                    else:
+                        df_with_ind, streak_info = apply_indicator(
+                            df, indicator_key, params=indicator_params.get(indicator_key, {})
+                        )
+                        print('zkdebug, streak:', streak_info)
+                        streak_cache.update(streak_info)
+                    
                 except Exception as e:
                     print(f"[WARN] Indicator error on {label}: {e}")
                     df_with_ind = df.copy()
@@ -229,6 +237,7 @@ def index():
             "index.html",
             shown_indicator=indicator_key,
             params=indicator_params.get(indicator_key, {}),
+            streak_info=streak_cache,
             plot_div=plot_div,
             labels=labels,
             time_range=time_range,

@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
+from .updown import calculate_updown
 
-def calculate_dailyr(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_dailyr(df: pd.DataFrame, tolerance: int, threshold: float) -> pd.DataFrame:
     """
     Calculate daily percentage returns and the maximum achievable profit window.
 
@@ -22,6 +23,9 @@ def calculate_dailyr(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["DailyR"] = df["Close"].pct_change() * 100
     df["DailyR"] = df["DailyR"].replace([np.inf, -np.inf], np.nan)
+    print('zkdebug cols', df.columns, df.index)
+    streak_info = calculate_updown(df["DailyR"], tolerance=tolerance, threshold=threshold)
+    # print('zkdebugupdown', streak_info)
 
     # --- 💰 Max Profit (single trade) ---
     try:
@@ -60,4 +64,4 @@ def calculate_dailyr(df: pd.DataFrame) -> pd.DataFrame:
 
 
     df.to_csv('check2.csv')
-    return df
+    return df, streak_info

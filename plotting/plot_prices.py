@@ -304,6 +304,13 @@ def plot_close_prices(
         - The y-axis title is updated to "Close Price (colored by Daily Return)".
         """
         for df, label in zip(clean_dfs, labels):
+            # Extract info for calculations from df's Info column
+            try:
+                info = df.pop('Info')   # pop out column for a cleaner df
+            except Exception as e:
+                print('Updown plotting fail:', e)
+                info = False
+
             # --- Color coding ---
             if "DailyR" not in df.columns:
                 print("Daily Returns cannot be found.")
@@ -374,7 +381,7 @@ def plot_close_prices(
 
             # --- 💰 Max Profit annotation ---
             try:
-                buy_date, sell_date, buy_price, sell_price, price_diff, profit_pct = df['Info'].head(6).tolist()
+                buy_date, sell_date, buy_price, sell_price, price_diff, profit_pct = info.head(6).tolist()
                 buy_date = pd.Timestamp(buy_date)
                 sell_date = pd.Timestamp(sell_date)
 
