@@ -152,7 +152,7 @@ def plot_close_prices(
                 y=df["Close"],
                 mode="lines",
                 name=f"{label} Close",
-                **close_hover_args,   # ✅ Let this fully control hover behavior
+                **close_hover_args,
                 showlegend=(indicator_key != "dailyr"),
             ),
             row=1,
@@ -381,7 +381,7 @@ def plot_close_prices(
                 col=1,
             )
 
-            # --- 💰 Max Profit annotation ---
+            # --- Max Profit annotation ---
             try:
                 buy_date, sell_date, buy_price, sell_price, price_diff, profit_pct = info.head(6).tolist()
                 buy_date = pd.Timestamp(buy_date)

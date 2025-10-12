@@ -28,7 +28,7 @@ def calculate_dailyr(df: pd.DataFrame, tolerance: int, threshold: float) -> pd.D
     streak_info = calculate_updown(pct_changes_with_dates, tolerance=tolerance, threshold=threshold)
     # print('zkdebugupdown', streak_info)
 
-    # --- 💰 Max Profit (single trade) ---
+    # --- Max Profit (single trade) ---
     try:
         prices = df["Close"].values
         dates = df["Date"].values
