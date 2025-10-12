@@ -30,3 +30,4 @@ def test_rsi_matches_talib(sample_data):
     my_rsi = apply_indicator(sample_data, "rsi", {"interval": interval})[f'RSI_{interval}']
     talib_rsi = talib.RSI(sample_data['Close'], timeperiod=interval)
     pd.testing.assert_series_equal(my_rsi, talib_rsi, check_names=False)
+
